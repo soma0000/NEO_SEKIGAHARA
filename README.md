@@ -1,5 +1,7 @@
 # NEO_SEKIGAHARA
 
+３年自制作
+
 開発環境
 Unreal Engine5.1.1 Windows11
 
