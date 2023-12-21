@@ -454,6 +454,9 @@ void APlayerBase::Attack_Sword(TTuple<TArray<AActor*>, TArray<FVector>> HitActor
 			{
 				ActionAssistComp->CameraShake(ShakePattern);
 			}
+
+			// 刀用のヒット音再生
+			ActionAssistComp->PlaySound(PlayerSounds.SwordAttack);
 		}
 	}
 }
@@ -522,6 +525,9 @@ void APlayerBase::Attack_Lance(TTuple<TArray<AActor*>, TArray<FVector>> HitActor
 			{
 				ActionAssistComp->CameraShake(ShakePattern);
 			}
+
+			// 槍用のヒット音再生
+			ActionAssistComp->PlaySound(PlayerSounds.LanceAttack);
 		}
 	}
 }
@@ -541,6 +547,9 @@ void APlayerBase::Attack_Gun()
 	{
 		// 銃の射撃処理
 		Cast<AGun>(GetWeapon())->Shoot(GetDamageAmount() * 5);
+
+		// 射撃音再生
+		ActionAssistComp->PlaySound(PlayerSounds.Shoot);
 	}
 	else
 	{
@@ -608,6 +617,9 @@ void APlayerBase::Attack_Gun()
 				{
 					ActionAssistComp->SpawnEffect(HitEffect, OutHitResult.Location);
 				}
+
+				// 蹴り用のヒット音再生
+				ActionAssistComp->PlaySound(PlayerSounds.Kick);
 
 				break;
 			}
@@ -714,6 +726,9 @@ void APlayerBase::PlayComboAnimtion_Gun(int _attackNum)
 	{
 		PlayAnimation(PlayerAnimation.GunAttack);
 	}
+
+	// 攻撃中フラグオン
+	State = EPlayerState::Attack;
 }
 
 

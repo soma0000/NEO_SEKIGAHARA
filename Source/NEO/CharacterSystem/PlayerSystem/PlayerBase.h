@@ -34,6 +34,30 @@ public:
 };
 //--------------------------------------------------------------------------------------
 
+//-----------------サウンド保管用---------------------------------------------------
+USTRUCT(BlueprintType)
+struct FAttackSound
+{
+	GENERATED_BODY()
+
+	// 刀で切る音
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sound")
+	USoundBase* SwordAttack = nullptr;
+
+	// 槍で殴る音
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sound")
+		USoundBase* LanceAttack = nullptr;
+
+	// 発砲音
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sound")
+		USoundBase* Shoot = nullptr;
+
+	// 蹴りの音
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sound")
+		USoundBase* Kick = nullptr;
+};
+//----------------------------------------------------------------------------------------
+
 //-----------------アニメーション保管用---------------------------------------------------
 USTRUCT(BlueprintType)
 struct FPlayerAnimation
@@ -258,6 +282,9 @@ protected:
 	// プレイヤーのアニメーション管理用
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
 		FPlayerAnimation PlayerAnimation;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sound")
+		FAttackSound PlayerSounds;
 
 	// 被ダメージ時のエフェクト
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Effect")

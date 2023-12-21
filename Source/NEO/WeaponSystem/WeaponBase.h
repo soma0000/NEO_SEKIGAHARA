@@ -97,6 +97,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ActionAssist")
 		class UActionAssistComponent* ActionAssistComp;
 
+	// 武器が落ちているときのエフェクト
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effect")
 		class UNiagaraComponent* AuraEffect;
 
