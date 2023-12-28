@@ -49,6 +49,13 @@ CharacterAnimNotifyState.h
 PlayerAnimNotifyState.cpp
 PlayerAnimNotifyState.h
 
+\NEO_SEKIGAHARA\Source\NEO\GameSystem
+
+NEOGameMode.cpp
+NEOGameMode.h
+NEOGameState.cpp
+NEOGameState.h
+
 \NEO_SEKIGAHARA\Source\NEO\WeaponSystem
 
 Gun.cpp
@@ -61,13 +68,6 @@ Sword.cpp
 Sword.h
 WeaponBase.cpp
 WeaponBase.h
-
-\NEO_SEKIGAHARA\Source\NEO\GameSystem
-
-NEOGameMode.cpp
-NEOGameMode.h
-NEOGameState.cpp
-NEOGameState.h
 
 担当箇所は以上となります。
 -------------------------------------------------------------------------------------
