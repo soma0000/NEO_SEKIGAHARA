@@ -96,15 +96,14 @@ struct FPlayerAnimation
 
 
 // プレイヤーの状態を管理するEnum
-UENUM(BlueprintType)
 enum class EPlayerState : uint8
 {
-	Idle		UMETA(DisplayName = "Idle"),			// 止まっている状態
-	Move		UMETA(DisplayName = "Move"),			// 移動
-	Jump		UMETA(DisplayName = "Jump"),			// ジャンプ
-	Attack		UMETA(DisplayName = "Attack"),			// 攻撃
-	Damage		UMETA(DisplayName = "Damage"),			// 被ダメージ
-	Death		UMETA(DisplayName = "Death")			// 死亡
+	Idle,			// 止まっている状態
+	Move,			// 移動
+	Jump,			// ジャンプ
+	Attack,			// 攻撃
+	Damage,			// 被ダメージ
+	Death			// 死亡
 };
 
 
@@ -193,12 +192,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Action")
 		void TakedDamage(float _damage, bool _isLastAttack = false);
 
-	void SetState(EPlayerState _state) { State = _state; }
-
-	UFUNCTION(BlueprintCallable, Category = "Debug")
-		EPlayerState GetState()const { return State; }
-
-
 	// プレイヤーが地面にいるか
 	bool IsPlayerGrounded()const;
 
@@ -221,6 +214,9 @@ public:
 	// F3:ゲームポーズ
 	UFUNCTION()
 		void SetGamePause();
+
+	UFUNCTION()
+		void ExitBattleArea();
 
 	// F6:無敵のオンオフ
 	UFUNCTION()

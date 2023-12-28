@@ -24,9 +24,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SetStatus")
 		bool GetIsAnyKeyPressed()const { return IsInputKeyDown("AnyKey") && GetIsDebugKeyPressed(); }
 
-	UFUNCTION(BlueprintCallable, Category = "SetStatus")
-		bool AnyEnemiesNearbyMoreSecond()const;
-
 	// プレイヤーの状態リセット
 	void ResetPlayerStatus();
 

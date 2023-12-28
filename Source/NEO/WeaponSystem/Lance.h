@@ -22,37 +22,4 @@ protected:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-private:
-
-	// 当たり判定
-	void SetCollision();
-
-	// プレイヤーの当たり判定
-	void PlyerAttack();
-
-	// 敵の当たり判定
-	void EnemyAttack();
-
-	// 敵に攻撃した時のヒットストップの時間を設定
-	float SetHitStopTime(int _comboNum);
-
-private:
-
-	// 被ダメージ時のエフェクト
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Effect", meta = (AllowPrivateAccess = "true"))
-		class UNiagaraSystem* HitEffect;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Effect", meta = (AllowPrivateAccess = "true"))
-		class USoundBase* EnemyHitSoundObj;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Effect", meta = (AllowPrivateAccess = "true"))
-		class USoundBase* ObjectHitSoundObj;
-
-	// 何秒間ヒットストップを起こすか
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"), Category = "Action Assist")
-		float HitStopTime = 0.3f;
-
-	// ヒットストップの長さの上がり幅
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"), Category = "Action Assist")
-		float HitStopTimeRise = 0.05f;
 };

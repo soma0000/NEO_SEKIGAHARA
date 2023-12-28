@@ -5,6 +5,7 @@
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/CapsuleComponent.h"
+#include "NEO/CharacterSystem/ActionAssistComponent.h"
 #include "PlayerBullet.h"
 
 
@@ -24,7 +25,7 @@ AGun::AGun()
 	// コリジョン設定
 	SetupCollisionComponent(WeaponCollision);
 
-	// 武器の種類を刀に設定
+	// 武器の種類を銃に設定
 	WeaponType = EWeaponType::WeaponType_Gun;
 }
 
@@ -47,7 +48,7 @@ void AGun::Tick(float DeltaTime)
 /*
  * 関数名　　　　：Shoot()
  * 処理内容　　　：射撃処理
- * 引数１　　　　：弾丸の攻撃力
+ * 引数１　　　　：int32・・・弾丸の攻撃力
  * 戻り値　　　　：なし
  */
 void AGun::Shoot(int32 _damageAmount /*= 0*/)
@@ -74,6 +75,6 @@ void AGun::Shoot(int32 _damageAmount /*= 0*/)
 	if (ShootSoundObj)
 	{
 		// 発射音再生
-		//ActionAssistComp->PlaySound(ShootSoundObj);
+		ActionAssistComp->PlaySound(ShootSoundObj);
 	}
 }

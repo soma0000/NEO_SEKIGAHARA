@@ -7,6 +7,9 @@
 #include "NEOGameState.h"
 #include "NEOGameMode.generated.h"
 
+class UProceduralMeshComponent;
+class ANEOGameState;
+
 UCLASS()
 class NEO_API ANEOGameMode : public AGameModeBase
 {
@@ -21,51 +24,54 @@ class NEO_API ANEOGameMode : public AGameModeBase
 	void Tick(float DeltaTime) override;
 
 public:
-	UFUNCTION(BlueprintCallable, Category = "State")
-		bool GetIsBattleArea()const { return bIsOnBattleArea; }
 
-	UFUNCTION(BlueprintCallable, Category = "UpdateState")
-		class ANEOGameState* GetGameState()const { return pGameState; }
+	// デフォルトポーンクラス取得
+	TSubclassOf<APawn> GetDefaultPawnClass()const { return DefaultPawnClass; }
 
-	// プレイヤーのカメラ変更
+	// 現在のゲームステートを取得
 	UFUNCTION(BlueprintCallable, Category = "UpdateState")
-		void SetViewTargetWithBlend(AActor* _newViewTarget, float _blendTime = 0.f, EViewTargetBlendFunction _blendFunc = VTBlend_Linear, float _blendExp = 0.f, bool _bLockOutgoing = false);
+		ANEOGameState* GetGameState()const { return pGameState; }
+
+	// ゲームを次の状態へ移す準備が整ったことを伝える
+	void SetNextGameState() { if (pGameState) { pGameState->SetReadyUpdateGame(true); } }
+
+	// プレイヤーのカメラの初期設定
+	void InitCameraOnPlayer();
 
 	// プレイヤーのカメラ設定
 	void SetPlayerCamera(AActor* _playerCamera) { PlayerCamera = _playerCamera; }
 
-	void InitCameraOnPlayer();
-	
+	// プレイヤーにカメラを設定する
+	void SetCameraOnPlayer();
+
+	// プレイヤーのカメラを任意のカメラに変更
+	UFUNCTION(BlueprintCallable, Category = "UpdateState")
+		void SetViewTargetWithBlend(AActor* _newViewTarget, float _blendTime = 0.f, EViewTargetBlendFunction _blendFunc = VTBlend_Linear, float _blendExp = 0.f, bool _bLockOutgoing = false);
+
 	// 現在のカメラ取得
 	AActor* GetNowPlayerCamera()const;
 
-	// イベント進行度取得
-	int32 GetEventIndex() { return EventIndex; }
-
+	// バトルエリアをセット
 	UFUNCTION(BlueprintCallable, Category = "Area")
 		void SetIsOnBattleArea(bool _IsBattleArea,TArray<class ASpawnPoint*> SpawnPoints,
 			AActor* Camera,
-			class UProceduralMeshComponent* LeftMesh,
-			class UProceduralMeshComponent* RightMesh,
-			class UProceduralMeshComponent* NearMesh
-			, float SetWallDealy = 0.f
-		);
+			UProceduralMeshComponent* LeftMesh,
+			UProceduralMeshComponent* RightMesh,
+			UProceduralMeshComponent* NearMesh
+			, float SetWallDealy = 0.f);
 
-	void SetWall();
+	// バトルエリアが作動中か取得
+	UFUNCTION(BlueprintCallable, Category = "State")
+		bool GetIsBattleArea()const { return bIsOnBattleArea; }
 
-	TArray<AActor*> GetEnemies()const { return Enemies; }
-
+	// 壁のコリジョンをオンに
+	void SetWallCollision();
 
 	// バトルエリアから出る
 	void ExitBattleArea();
 
-	//バトルエリアのカメラ
-	AActor* BattleAreaCamera;
-
-	TArray<class UProceduralMeshComponent*> BattleAreaMeshs;
-
-	TArray<class ASpawnPoint*> BattleAreaSpawnPoints;
-
+	// イベント進行度取得
+	int32 GetEventIndex() { return EventIndex; }
 
 	// 敵の出現処理
 	AActor* SpawnEnemy(ASpawnPoint* spawnPoint);
@@ -73,41 +79,44 @@ public:
 	// バトルエリア内に敵を出現させる
 	void SpawnEnemyInBattleArea();
 
-	// ゲームを次の状態へ移す準備が整ったことを伝える
-	void SetNextGameState() { if (pGameState) { pGameState->SetReadyUpdateGame(true); } }
-
-	// プレイヤーにカメラを設定する
-	void SetCameraOnPlayer();
-
 	// エネミーの削除
 	void DestroyEnemy(AActor* _enemy, bool _bBattleAreaEnemy);
 
-	// デフォルトポーンクラスを取得
-	TSubclassOf<APawn> GetDefaultPawnClass()const { return DefaultPawnClass; }
+	// 柵破壊イベント(ブループリント実装)
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
+		void DestroyerEvent();
 
+	//--------------デバッグ用-----------------
 	// ゲームリセット
 	void RestartGame();
 
 	// ゲームポーズ
 	void SetGamePause(bool _bPaused);
 
-	// デモ画面を表示
-	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
-		void DestroyerEvent();
+	// バトルエリア内の敵を強制削除
+	void DestroyBattleAreaEnemy_Debug();
+	//-----------------------------------------
 
 
 private:
 
-	TArray<AActor*> Enemies;
+	//バトルエリアのカメラ
+	AActor* BattleAreaCamera;
+
+	// バトルエリアを構成する壁
+	TArray<UProceduralMeshComponent*> BattleAreaMeshs;
 
 	// バトルエリアのフラグ
 	bool bIsOnBattleArea;
 
+	// バトルエリア内の敵を格納
+	TArray<AActor*> Enemies;
+
+	// 敵をスポーンさせるポイント
+	TArray<class ASpawnPoint*> BattleAreaSpawnPoints;
+
 	// イベント用のインデックス
 	int32 EventIndex;
-
-	// バトルエリア内の敵のカウンター
-	int32 BattleAreaEnemyCount = 0;
 
 	// プレイヤーのカメラ格納用(移動するカメラ)
 	AActor* PlayerCamera;
@@ -116,12 +125,10 @@ private:
 	AActor* pCamera;
 
 	// ゲームステートのポインタ
-	class ANEOGameState* pGameState;
+	ANEOGameState* pGameState;
 
 	// プレイヤーコントローラーのポインタ
 	class ANEOPlayerController* PlayerController;
-
-	class ULevelSequence* BossStartMovie;
 
 	FTimerHandle TimerHandle;
 };

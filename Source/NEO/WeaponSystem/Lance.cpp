@@ -22,7 +22,7 @@ ALance::ALance()
 	// ƒRƒŠƒWƒ‡ƒ“İ’è
 	SetupCollisionComponent(WeaponCollision);
 
-	// •Ší‚Ìí—Ş‚ğ“‚Éİ’è
+	// •Ší‚Ìí—Ş‚ğ‘„‚Éİ’è
 	WeaponType = EWeaponType::WeaponType_Lance;
 }
 

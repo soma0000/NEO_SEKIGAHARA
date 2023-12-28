@@ -24,6 +24,14 @@ enum class EWeaponType :uint8
 };
 //----------------------------------------------------------------
 
+//------武器のステート管理用-----------------
+enum class EWeaponState :uint8
+{
+	PickUp,	// 拾える状態
+	Fall,	// 飛んでいる状態
+	Held	// 持たれている状態
+};
+//-------------------------------------------
 
 UCLASS()
 class NEO_API AWeaponBase : public AActor
@@ -42,21 +50,18 @@ public:
 	// プレイヤーの手から外れる
 	void DetachFromCharacter();
 
-	// 飛んでいる状態か
-	bool GetIsFalling()const { return IsFalling; }
-
 	// 武器の種類判別用
 	EWeaponType GetWeaponType()const { return WeaponType; }
 
 	// 取得できる状態か
-	bool GetIsPickUp()const { return IsPickUp && !IsFalling; }
+	bool GetIsPickUp()const { return WeaponState == EWeaponState::PickUp; }
 
 	// 攻撃力取得
 	int32 GetDamage()const { return Damage; }
 
 	// 攻撃が当たったかどうか
 	bool GetHitResults(TArray<FHitResult>& _outHitResults);
-	bool GetHitResults(FVector _start, FVector _end, TArray<FHitResult>& _outHitResults);
+	bool GetHitResults(TArray<FHitResult>& _outHitResults,FVector _start, FVector _end);
 
 	// コリジョン取得用
 	class UCapsuleComponent* GetCollisionComponent()const { return WeaponCollision; }
@@ -105,29 +110,24 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sound")
 		class USoundBase* DropWeaponSoundObj;
 
-	// 武器を判別するEnum
+	// 武器が落ちる場所
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Drop")
 		FVector DropLocation;
 
-	// 武器を判別するEnum
+	// 武器が落ちる角度
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Drop")
 		FRotator DropAngle;
 
+	// オーナーの情報
+	ACharacter* pOwner;
 
 	// 武器を判別するEnum
 	EWeaponType WeaponType;
 
-	// オーナーの情報
-	class ACharacter* pOwner;
-
 private:
 
-
-	// 取得できる状態か
-	bool IsPickUp;
-
-	// 飛んでいるかどうか
-	bool IsFalling;
+	// 武器のステート
+	EWeaponState WeaponState;
 
 	// フレームカウント用
 	float Frames;

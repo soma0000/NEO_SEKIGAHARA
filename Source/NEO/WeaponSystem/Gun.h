@@ -35,25 +35,6 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Spawning")
 		TSubclassOf<class APlayerBullet> BulletClass;
 
-	// 被ダメージ時のエフェクト
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Effect", meta = (AllowPrivateAccess = "true"))
-		class UNiagaraSystem* HitEffect;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sound", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, Category = "Sound")
 		class USoundBase* ShootSoundObj;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sound", meta = (AllowPrivateAccess = "true"))
-		class USoundBase* EnemyHitSoundObj;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sound", meta = (AllowPrivateAccess = "true"))
-		class USoundBase* ObjectHitSoundObj;
-
-	// 何秒間ヒットストップを起こすか
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Action Assist", meta = (AllowPrivateAccess = "true"))
-		float HitStopTime = 0.1f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Action Assist",meta = (AllowPrivateAccess = "true"))
-		float KnockBackDistance = -250.f;
-
-
 };

@@ -231,5 +231,4 @@ void ANEOGameState::SetNextGameState(EGameState_NEO _nextGameState)
 {
 	// 指定されたステートへ移動
 	GameState = _nextGameState;
-
 }

@@ -10,7 +10,6 @@
 #include "NEO/GameSystem/SpawnPoint.h"
 #include "NEO/CharacterSystem/BossSystem/OdaBase.h"
 #include "NEO/CharacterSystem/Enemy/EnamyBase.h"
-#include "NEO/CharacterSystem/PlayerSystem/PlayerBase.h"
 #include "NEO/CharacterSystem/PlayerSystem/NEOPlayerController.h"
 
 ANEOGameMode::ANEOGameMode()
@@ -48,6 +47,33 @@ void ANEOGameMode::Tick(float DeltaTime)
 	}
 }
 
+// カメラの初期設定
+void ANEOGameMode::InitCameraOnPlayer()
+{
+	SetViewTargetWithBlend(PlayerCamera);
+}
+
+
+/*
+ * 関数名　　　　：SetCameraOnPlayer()
+ * 処理内容　　　：プレイヤーのカメラ設定
+ * 戻り値　　　　：なし
+ */
+void ANEOGameMode::SetCameraOnPlayer()
+{
+	if (PlayerController) { return; }
+
+	// プレイヤーが生きていることを確認
+	if (!PlayerController->GetPlayerIsDead())
+	{
+		// バトルエリア内にいるかどうかでカメラを選択
+		AActor* NowCamera = (bIsOnBattleArea) ? (pCamera) : (PlayerCamera);
+
+		// プレイヤーのカメラに設定
+		SetViewTargetWithBlend(NowCamera);
+	}
+}
+
 
 /*
  * 関数名　　　　：SetViewTargetWithBlend()
@@ -57,7 +83,7 @@ void ANEOGameMode::Tick(float DeltaTime)
  * 引数３　　　　：EViewTargetBlendFunction _blendFunc
  * 引数４　　　　：float _blendExp
  * 引数５　　　　：bool _bLockOutgoing
- * 戻り値　　　　：現在のカメラの情報
+ * 戻り値　　　　：なし
  */
 void ANEOGameMode::SetViewTargetWithBlend(AActor* _newViewTarget, float _blendTime, EViewTargetBlendFunction _blendFunc, float _blendExp, bool _bLockOutgoing)
 {
@@ -70,14 +96,10 @@ void ANEOGameMode::SetViewTargetWithBlend(AActor* _newViewTarget, float _blendTi
 		PlayerController->SetViewTargetWithBlend(_newViewTarget, _blendTime);
 	}
 
+	// カメラを新しいカメラへ
 	pCamera = _newViewTarget;
 }
 
-// カメラの初期設定
-void ANEOGameMode::InitCameraOnPlayer()
-{
-	SetViewTargetWithBlend(PlayerCamera);
-}
 
 /*
  * 関数名　　　　：GetNowPlayerCamera()
@@ -133,15 +155,16 @@ void ANEOGameMode::SetIsOnBattleArea(bool _IsBattleArea,TArray<class ASpawnPoint
 		}
 	}
 
+	// 壁のコリジョンにディレイを付けていたら
 	if (SetWallDealy != 0.f)
 	{
 		// 一定時間後に壁生成
 		FTimerManager& TimerManager = GetWorld()->GetTimerManager();
-		TimerManager.SetTimer(TimerHandle, this, &ANEOGameMode::SetWall, SetWallDealy, false);
+		TimerManager.SetTimer(TimerHandle, this, &ANEOGameMode::SetWallCollision, SetWallDealy, false);
 	}
 	else
 	{
-		SetWall();
+		SetWallCollision();
 	}
 
 	// プレイヤーのカメラを固定カメラに変更
@@ -160,7 +183,13 @@ void ANEOGameMode::SetIsOnBattleArea(bool _IsBattleArea,TArray<class ASpawnPoint
 	++EventIndex;
 }
 
-void ANEOGameMode::SetWall()
+
+/*
+ * 関数名　　　　：SetWallCollision()
+ * 処理内容　　　：壁のコリジョンをオンにする
+ * 戻り値　　　　：なし
+ */
+void ANEOGameMode::SetWallCollision()
 {
 	//バトルエリアを有効化
 	for (auto Mesh : BattleAreaMeshs) {
@@ -172,6 +201,50 @@ void ANEOGameMode::SetWall()
 		else {
 			UE_LOG(LogTemp, Warning, TEXT("MeshWall is not found"));
 		}
+	}
+}
+
+
+/*
+ * 関数名　　　　：ExitBattleArea()
+ * 処理内容　　　：バトルエリアから抜ける処理
+ * 戻り値　　　　：なし
+ */
+void ANEOGameMode::ExitBattleArea()
+{
+	// 策破壊イベント
+	AGameSystem_BattleArea* Area = Cast<AGameSystem_BattleArea>(GetNowPlayerCamera());
+	if (Area)
+	{
+		Area->ExitAreaEvent();
+	}
+
+
+	//バトルエリアを無効化
+	bIsOnBattleArea = false;
+	for (auto Mesh : BattleAreaMeshs) {
+		if (Mesh) {
+			Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		}
+		else {
+			UE_LOG(LogTemp, Warning, TEXT("MeshWall is not found"));
+		}
+	}
+
+
+	//固定カメラをプレイヤーのカメラに変更
+	if (!PlayerController->GetPlayerIsDead())
+	{
+		if (PlayerCamera)
+		{
+			SetViewTargetWithBlend(PlayerCamera, 1.f);
+		}
+	}
+	else
+	{
+		//Log
+		UE_LOG(LogTemp, Warning, TEXT("Player.GetOwner() : <CameraActor> is not found"));
 	}
 }
 
@@ -206,98 +279,18 @@ AActor* ANEOGameMode::SpawnEnemy(ASpawnPoint* spawnPoint)
 
 	if (Enemy) {
 		Enemy->SetActorTransform(spawnTransform);
-		Enemy->IsAreaEnemy = true;		//Flag Set 
-
-		// エネミーを追加
-		++BattleAreaEnemyCount;
+		Enemy->IsAreaEnemy = true;
 
 		return Enemy;
 	}
 	else if (Boss) {
 		Boss->SetActorTransform(spawnTransform);
-		Boss->IsAreaEnemy = true;		//Flag Set 
-
-		// エネミーを追加
-		++BattleAreaEnemyCount;
+		Boss->IsAreaEnemy = true; 
 
 		return Boss;
 	}
 
 	return nullptr;
-}
-
-
-/*
- * 関数名　　　　：SetCameraOnPlayer()
- * 処理内容　　　：プレイヤーのカメラ設定
- * 戻り値　　　　：なし
- */
-void ANEOGameMode::SetCameraOnPlayer()
-{
-	if (PlayerController)
-	{
-		// プレイヤーが生きていることを確認
-		if (!PlayerController->GetPlayerIsDead())
-		{
-			// バトルエリア内にいるかどうかでカメラを選択
-			AActor* NowCamera = (bIsOnBattleArea)?(pCamera):(PlayerCamera);
-
-			// プレイヤーのカメラに設定
-			SetViewTargetWithBlend(NowCamera);
-		}
-	}
-}
-
-
-/*
- * 関数名　　　　：RestartGame()
- * 処理内容　　　：ゲームリセット
- * 戻り値　　　　：なし
- */
-void ANEOGameMode::RestartGame()
-{
-	UGameplayStatics::OpenLevel(GetWorld(),"GameMap");
-}
-
-
-/*
- * 関数名　　　　：SetGamePause()
- * 処理内容　　　：ゲームポーズ
- * 戻り値　　　　：なし
- */
-void ANEOGameMode::SetGamePause(bool _bPaused)
-{
-	UGameplayStatics::SetGamePaused(GetWorld(), _bPaused);
-}
-
-/*
- * 関数名　　　　：DestroyEnemy()
- * 処理内容　　　：敵の削除処理
- * 引数１　　　　：AActor* _enemy ・・・・・・・削除したい敵
- * 引数２　　　　：bool _bBattleAreaEnemy・・・バトルエリア内の敵かどうか
- * 戻り値　　　　：なし
- */
-void ANEOGameMode::DestroyEnemy(AActor* _enemy, bool _bBattleAreaEnemy)
-{
-	if (!_enemy) { return; }
-
-	// エリア内のエネミーだったらカウントを減らす
-	if (_bBattleAreaEnemy)
-	{
-		Enemies.RemoveSingle(_enemy);
-		_enemy->Destroy();
-		--BattleAreaEnemyCount;
-	}
-	else
-	{
-		_enemy->Destroy();
-	}
-
-	// バトルエリアを抜ける
-	if (BattleAreaEnemyCount == 0 && bIsOnBattleArea)
-	{
-		ExitBattleArea();
-	}
 }
 
 
@@ -315,53 +308,86 @@ void ANEOGameMode::SpawnEnemyInBattleArea()
 	}
 
 	for (ASpawnPoint* spawnPoint : BattleAreaSpawnPoints) {
-		if (!spawnPoint) continue; //Check SpawnPoint
+		if (!spawnPoint) continue;
 
-		//敵を生成する
-		Enemies.Add(SpawnEnemy(spawnPoint));
+		// エネミーをスポーン
+		AActor* newEnemy = SpawnEnemy(spawnPoint);
+
+		if (newEnemy)
+		{
+			//敵を生成する
+			Enemies.Add(newEnemy);
+		}
 	}
 }
 
 
 /*
- * 関数名　　　　：ExitBattleArea()
- * 処理内容　　　：バトルエリアから抜ける処理
+ * 関数名　　　　：DestroyEnemy()
+ * 処理内容　　　：敵の削除処理
+ * 引数１　　　　：AActor* _enemy ・・・・・・・削除したい敵
+ * 引数２　　　　：bool _bBattleAreaEnemy・・・バトルエリア内の敵かどうか
  * 戻り値　　　　：なし
  */
-void ANEOGameMode::ExitBattleArea()
+void ANEOGameMode::DestroyEnemy(AActor* _enemy, bool _bBattleAreaEnemy)
 {
-	// 策破壊イベント
-	AGameSystem_BattleArea* Area = Cast<AGameSystem_BattleArea>(GetNowPlayerCamera());
-	if (Area) 
+	if (!_enemy) { return; }
+
+	// エリア内のエネミーだったら配列から削除
+	if (_bBattleAreaEnemy)
 	{
-		Area->ExitAreaEvent();
+		Enemies.Remove(_enemy);
 	}
 
+	// 敵を削除
+	_enemy->Destroy();
 
-	//バトルエリアを無効化
-	bIsOnBattleArea = false;
-	for (auto Mesh : BattleAreaMeshs) {
-		if (Mesh) {
-			Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
-		}
-		else {
-			UE_LOG(LogTemp, Warning, TEXT("MeshWall is not found"));
-		}
-	}
-
-
-	//固定カメラをプレイヤーのカメラに変更
-	if (!PlayerController->GetPlayerIsDead())
+	// バトルエリア内に敵がいなくなったら抜ける
+	if (Enemies.Num() == 0 && bIsOnBattleArea)
 	{
-		if (PlayerCamera)
-		{
-			SetViewTargetWithBlend(PlayerCamera, 1.f);
-		}
+		ExitBattleArea();
 	}
-	else
+}
+
+
+/*
+ * 関数名　　　　：RestartGame()
+ * 処理内容　　　：ゲームリセット
+ * 戻り値　　　　：なし
+ */
+void ANEOGameMode::RestartGame()
+{
+	UGameplayStatics::OpenLevel(GetWorld(),"GameMap");
+}
+
+
+/*
+ * 関数名　　　　：SetGamePause()
+ * 処理内容　　　：ゲームポーズの切り替え
+ * 戻り値　　　　：なし
+ */
+void ANEOGameMode::SetGamePause(bool _bPaused)
+{
+	UGameplayStatics::SetGamePaused(GetWorld(), _bPaused);
+}
+
+/*
+ * 関数名　　　　：DestroyBattleAreaEnemy_Debug()
+ * 処理内容　　　：強制的にバトルエリア内の敵を削除
+ * 戻り値　　　　：なし
+ */
+void ANEOGameMode::DestroyBattleAreaEnemy_Debug()
+{
+	// バトルエリア内の敵の数取得
+	const int32 EnemyCnt = Enemies.Num();
+
+	// 敵が残っているか判定
+	if (EnemyCnt == 0) { return; }
+
+	// 敵を削除
+	for (int i = 0; i < EnemyCnt; ++i)
 	{
-		//Log
-		UE_LOG(LogTemp, Warning, TEXT("Player.GetOwner() : <CameraActor> is not found"));
+		// バトルエリア内の敵を削除
+		DestroyEnemy(Enemies[0], true);
 	}
 }

@@ -12,8 +12,7 @@
 
 // Sets default values
 AWeaponBase::AWeaponBase()
-	: IsPickUp(true)
-	, IsFalling(false)
+	: WeaponState(EWeaponState::PickUp)
 	, Frames(0.f)
 	, Damage(0)
 	, JumpHeight(150.f)
@@ -44,7 +43,7 @@ void AWeaponBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (IsFalling)
+	if (WeaponState == EWeaponState::Fall)
 	{
 		BlowsAway();
 	}
@@ -131,10 +130,10 @@ void AWeaponBase::AttachToCharacter(ACharacter* _owner, FName _socketName)
 	// 飛んでいるときは取れない
 	if (!GetIsPickUp()) { return; }
 
-	// 取得出来ない状態に
-	IsPickUp = false;
+	// 持たれている状態に
+	WeaponState = EWeaponState::Held;
 
-	// オーナーの情報保存
+	// オーナーを設定
 	pOwner = _owner;
 
 	if (AuraEffect)
@@ -158,11 +157,8 @@ void AWeaponBase::DetachFromCharacter()
 	// キャラクターから外す
 	DetachFromActor(FDetachmentTransformRules(EDetachmentRule::KeepWorld, EDetachmentRule::KeepWorld, EDetachmentRule::KeepWorld,false));
 
-	// 飛んでいるときは拾えない状態へ
-	IsPickUp = true;
-
-	// 吹き飛ばすフラグを建てる
-	IsFalling = true;
+	// 飛んでいる状態に
+	WeaponState = EWeaponState::Fall;
 
 	// オーナーを外す
 	pOwner = nullptr;
@@ -184,19 +180,19 @@ bool AWeaponBase::GetHitResults(TArray<FHitResult>& _outHitResults)
 	FVector Start = WeaponCollision->GetComponentLocation();
 	FVector End = Start;
 	
-	return GetHitResults(Start, End, _outHitResults);
+	return GetHitResults(_outHitResults,Start, End);
 }
 
 
 /*
  * 関数名　　　　：GetHitResults()
  * 処理内容　　　：攻撃が当たったかどうか判定
- * 引数１　　　　：FVector _start ・・・・・・・・ ・・・・当たり判定をとる範囲(開始地点)
- * 引数２		 ：FVector _end・・・・・・・・・・・・・・当たり判定をとる範囲(終了地点)
- * 引数３		 ：TArray<FHitResult>& _outHitResults・・・当たったオブジェクト
+ * 引数１		 ：TArray<FHitResult>& _outHitResults・・・当たったオブジェクト
+ * 引数２　　　　：FVector _start ・・・・・・・・ ・・・・当たり判定をとる範囲(開始地点)
+ * 引数３		 ：FVector _end・・・・・・・・・・・・・・当たり判定をとる範囲(終了地点)
  * 戻り値　　　　：当たったかどうか
  */
-bool AWeaponBase::GetHitResults(FVector _start, FVector _end, TArray<FHitResult>& _outHitResults)
+bool AWeaponBase::GetHitResults(TArray<FHitResult>& _outHitResults,FVector _start, FVector _end)
 {
 	// 武器本体とオーナーには当たらないようにする
 	FCollisionQueryParams CollisionParams;
@@ -244,11 +240,8 @@ void AWeaponBase::BlowsAway()
 	if (NowPos.Z < FlyBeforePos.Z)
 	{
 		// 持たれていない状態にする
-		IsPickUp = true;
-
-		// 飛んでいる状態のフラグを下ろす
-		IsFalling = false;
-
+		WeaponState = EWeaponState::PickUp;
+		
 		// フレームリセット
 		Frames = 0.f;
 

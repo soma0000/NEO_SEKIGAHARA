@@ -44,15 +44,15 @@ private:
 private:
 
 	// 弾のコリジョン
-	UPROPERTY(EditAnywhere,BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere,Category = "Collision", meta = (AllowPrivateAccess = "true"))
 		class UCapsuleComponent* BulletCollision;
 
 	// 武器のメッシュ
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BulletMesh", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, Category = "Mesh", meta = (AllowPrivateAccess = "true"))
 		class UStaticMeshComponent* BulletStaticMesh;
 
 	// 弾の移動速度
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BulletParams", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, Category = "BulletParams", meta = (AllowPrivateAccess = "true"))
 		float MoveSpeed;
 
 	// 攻撃力
