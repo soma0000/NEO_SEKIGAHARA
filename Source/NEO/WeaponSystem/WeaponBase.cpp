@@ -57,7 +57,7 @@ void AWeaponBase::Tick(float DeltaTime)
  * 引数３　　　　：FName PublicName ・・・・・・・・・・エディタでの公開名
  * 戻り値　　　　：なし
  */
-void AWeaponBase::SetupWeaponMesh(UStaticMeshComponent*& MeshComp, TCHAR* WeaponAssetPath, FName PublicName /*= "WeaponMesh"*/)
+void AWeaponBase::SetupWeaponMesh(TObjectPtr<UStaticMeshComponent>& MeshComp, TCHAR* WeaponAssetPath, FName PublicName /*= "WeaponMesh"*/)
 {
 	// 武器のコンポーネントを作成
 	MeshComp = CreateDefaultSubobject<UStaticMeshComponent>(PublicName);
@@ -91,7 +91,7 @@ void AWeaponBase::SetupWeaponMesh(UStaticMeshComponent*& MeshComp, TCHAR* Weapon
  * 引数３　　　　：FName PublicName ・・・・・・・・・・・エディタでの公開名
  * 戻り値　　　　：なし
  */
-void AWeaponBase::SetupWeaponMesh(USkeletalMeshComponent*& MeshComp, TCHAR* WeaponAssetPath, FName PublicName /*= "WeaponMesh"*/)
+void AWeaponBase::SetupWeaponMesh(TObjectPtr<USkeletalMeshComponent>& MeshComp, TCHAR* WeaponAssetPath, FName PublicName /*= "WeaponMesh"*/)
 {
 	// 武器のコンポーネントを作成
 	MeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(PublicName);

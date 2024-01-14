@@ -9,8 +9,6 @@
 
 ANEOPlayerController::ANEOPlayerController()
 	: DefaultRemainingLives(2)
-	, EnemiesCnt(3)
-	, PlayerToEnemyDistance(200.f)
 	, RespownPosHeight(300.f)
 	, RemainingLives(DefaultRemainingLives)
 	, PlayerIsDead(false)
@@ -46,60 +44,59 @@ void ANEOPlayerController::ResetPlayerStatus()
 
 /*
  * 関数名　　　　：DestroyPlayer()
- * 処理内容　　　：プレイヤーの入力受付(移動処理)
+ * 処理内容　　　：プレイヤーを削除
  * 戻り値　　　　：なし
  */
 void ANEOPlayerController::DestroyPlayer()
 {
-	if (pPlayer && pGameMode)
-	{
-		// プレイヤー削除
-		pPlayer->Destroy();
+	// プレイヤーかゲームモードの情報が取れていないとき
+	if (!pPlayer || !pGameMode) { return; }
 
-		// プレイヤーをNULLに
-		pPlayer = nullptr;
+	// プレイヤー削除
+	pPlayer->Destroy();
 
-		// プレイヤーを死亡状態へ
-		PlayerIsDead = true;
+	// プレイヤーをNULLに
+	pPlayer = nullptr;
 
-		// ゲームを次の状態へ
-		pGameMode->SetNextGameState();
-	}
+	// プレイヤーを死亡状態へ
+	PlayerIsDead = true;
+
+	// ゲームを次の状態へ
+	pGameMode->SetNextGameState();
 }
 
 
 /*
  * 関数名　　　　：RespawnPlayer()
- * 処理内容　　　：プレイヤーの入力受付(移動処理)
- * 引数１　　　　：FInputActionValue& Value・・・入力量
+ * 処理内容　　　：プレイヤーをリスポーン
  * 戻り値　　　　：なし
  */
 void ANEOPlayerController::RespawnPlayer()
 {
-	if (pPlayer && pGameMode)
-	{
-		// プレイヤーが死亡した位置取得
-		FTransform RespownTransForm = pPlayer->GetActorTransform();
+	// プレイヤーかゲームモードの情報が取れていないとき
+	if (!pPlayer || !pGameMode) { return; }
 
-		// プレイヤーを削除
-		pPlayer->Destroy();
+	// プレイヤーが死亡した位置取得
+	FTransform RespownTransForm = pPlayer->GetActorTransform();
 
-		// プレイヤーをNULLに
-		pPlayer = nullptr;
+	// プレイヤーを削除
+	pPlayer->Destroy();
 
-		// プレイヤーの残機を1減らす
-		ReduceRemainingLives();
+	// プレイヤーをNULLに
+	pPlayer = nullptr;
 
-		// 復活位置を少し高く
-		const FVector RespownPos = RespownTransForm.GetTranslation();
-		RespownTransForm.SetTranslation(FVector(RespownPos.X, RespownPos.Y, RespownPos.Z + RespownPosHeight));
+	// プレイヤーの残機を1減らす
+	ReduceRemainingLives();
 
-		// 新しいプレイヤーを生成
-		pPlayer = Cast<APlayerBase>(GetWorld()->SpawnActor<APawn>(pGameMode->GetDefaultPawnClass(), RespownTransForm));
+	// 復活位置を少し高く
+	const FVector RespownPos = RespownTransForm.GetTranslation();
+	RespownTransForm.SetTranslation(FVector(RespownPos.X, RespownPos.Y, RespownPos.Z + RespownPosHeight));
 
-		// リスポーンのカメラ処理
-		pGameMode->SetCameraOnPlayer();
-	}
+	// 新しいプレイヤーを生成
+	pPlayer = Cast<APlayerBase>(GetWorld()->SpawnActor<APawn>(pGameMode->GetDefaultPawnClass(), RespownTransForm));
+
+	// リスポーンのカメラ処理
+	SetViewTargetWithBlend(pGameMode->GetNowPlayerCamera(), 0.f);
 }
 
 
@@ -110,12 +107,11 @@ void ANEOPlayerController::RespawnPlayer()
  */
 FVector ANEOPlayerController::GetPlayerLocation()const
 {
-	if (pPlayer)
-	{
-		return pPlayer->GetActorLocation();
-	}
+	// プレイヤーの情報が取れていないとき
+	if (!pPlayer){ FVector::ZeroVector; }
 
-	return FVector::ZeroVector;
+	// プレイヤーの座標を返す
+	return pPlayer->GetActorLocation();
 }
 
 /*

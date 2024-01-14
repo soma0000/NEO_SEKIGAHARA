@@ -6,9 +6,6 @@
 #include "WeaponBase.h"
 #include "Gun.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class NEO_API AGun : public AWeaponBase
 {
@@ -36,5 +33,5 @@ private:
 		TSubclassOf<class APlayerBullet> BulletClass;
 
 	UPROPERTY(EditAnywhere, Category = "Sound")
-		class USoundBase* ShootSoundObj;
+		TObjectPtr<class USoundBase> ShootSoundObj;
 };

@@ -8,6 +8,11 @@
 #include "PlayerBase.generated.h"
 
 class AWeaponBase;
+class UCameraShakeBase;
+class UDebugComponent;
+class ANEOGameMode;
+class ANEOPlayerController;
+class UNiagaraSystem;
 
 //-----------------inputAction----------------------------------------------------------
 USTRUCT(BlueprintType)
@@ -18,19 +23,19 @@ struct FMainAction
 public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		UInputMappingContext* DefaultMappingContext = nullptr;
+		TObjectPtr<UInputMappingContext> DefaultMappingContext = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		UInputAction* MoveAction = nullptr;
+		TObjectPtr<UInputAction> MoveAction = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		UInputAction* JumpAction = nullptr;
+		TObjectPtr<UInputAction> JumpAction = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		UInputAction* ComboAction1 = nullptr;
+		TObjectPtr<UInputAction> ComboAction1 = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		UInputAction* ComboAction2 = nullptr;
+		TObjectPtr<UInputAction> ComboAction2 = nullptr;
 };
 //--------------------------------------------------------------------------------------
 
@@ -42,19 +47,19 @@ struct FAttackSound
 
 	// 刀で切る音
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sound")
-	USoundBase* SwordAttack = nullptr;
+		TObjectPtr<USoundBase> SwordAttack = nullptr;
 
 	// 槍で殴る音
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sound")
-		USoundBase* LanceAttack = nullptr;
+		TObjectPtr<USoundBase> LanceAttack = nullptr;
 
 	// 発砲音
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sound")
-		USoundBase* Shoot = nullptr;
+		TObjectPtr<USoundBase> Shoot = nullptr;
 
 	// 蹴りの音
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sound")
-		USoundBase* Kick = nullptr;
+		TObjectPtr<USoundBase> Kick = nullptr;
 };
 //----------------------------------------------------------------------------------------
 
@@ -66,31 +71,27 @@ struct FPlayerAnimation
 
 	// コンボ
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-		TArray<UAnimMontage*> ComboAttack = { nullptr,nullptr };
+		TArray<TObjectPtr<UAnimMontage>> ComboAttack = { nullptr,nullptr };
 
 	// 銃での攻撃
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-		UAnimMontage* GunAttack = nullptr;
-
-	// 銃での攻撃２
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-		UAnimMontage* GunAttack2 = nullptr;
+		TArray<TObjectPtr<UAnimMontage>> GunAttack = { nullptr,nullptr };
 
 	// 空中にいるときの攻撃
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-		UAnimMontage* AirAttack = nullptr;
+		TObjectPtr<UAnimMontage> AirAttack = nullptr;
 
 	// 被ダメージ
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-		UAnimMontage* TakeDamage = nullptr;
+		TObjectPtr<UAnimMontage> TakeDamage = nullptr;
 
 	// 被ダメージ
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-		UAnimMontage* KnockBack = nullptr;
+		TObjectPtr<UAnimMontage> KnockBack = nullptr;
 
 	// 死亡時
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-		UAnimMontage* Death = nullptr;
+		TObjectPtr<UAnimMontage> Death = nullptr;
 };
 //----------------------------------------------------------------------------------------
 
@@ -171,13 +172,6 @@ public:
 	// コンボ数を取得
 	int GetComboIndex()const { return ComboIndex; }
 
-	// 蹴り攻撃中か取得
-	bool GetKicking()const { return IsKicking; }
-
-	// 無敵切り替え
-	void SetInvincibilityOn();
-	void SetInvincibilityOff();
-
 	// アクションアシストコンポーネントを取得
 	UActionAssistComponent* GetActionAssistComponent()const { return ActionAssistComp; }
 
@@ -230,14 +224,21 @@ private:
 	// キャラクターの回転
 	void RotateCharacter(float _nowInput_X);
 
+	// 無敵切り替え
+	void SetInvincibilityOn();
+	void SetInvincibilityOff();
+
 	// 死亡処理呼び出し
 	void CallControllerFunc_DestroyPlayer();
 
-	// 無敵解除
-	void SetInvincibility() {IsInvincibility = false;}
-
 	// 攻撃に関するフラグをすべてリセット
 	void ResetAllAttackFlags();
+
+	// プレイヤーの被ダメージ時の処理
+	void OnDamage(bool _isLastAttack);
+
+	// プレイヤーの死亡時の処理
+	void OnDeath();
 
 	// アニメーション再生
 	void PlayAnimation(UAnimMontage* _toPlayAnimMontage, FName _startSectionName = "None", float _playRate = 1.f);
@@ -250,18 +251,18 @@ protected:
 	// 毎フレーム呼び出される処理
 	virtual void Tick(float DeltaTime) override;
 
+	//------------------プレイヤーのセットアップ----------------------------------------------------------------------
 	// 入力のセットアップ
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	// デバッグキーに関数を割り当てる
-	void SetupDebugEventBindings();
-
-	//------------------プレイヤーのセットアップ----------------------------------------------------------------------
 	// プレイヤーのデータを初期化
 	virtual void InitPlayerData();
 
 	// プレイヤーのステータス初期化
 	void SetupPlayerStatus();
+
+	// デバッグキーに関数を割り当てる
+	void SetupDebugEventBindings();
 
 protected:
 
@@ -284,11 +285,11 @@ protected:
 
 	// 被ダメージ時のエフェクト
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Effect")
-		class UNiagaraSystem* HitEffect;
+		TObjectPtr<UNiagaraSystem> HitEffect;
 
 	// カメラの揺れ方
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-		TSubclassOf<class UCameraShakeBase> ShakePattern;
+		TSubclassOf<UCameraShakeBase> ShakePattern;
 	//-------------------------------------------------------------------------------------------------------------
 
 
@@ -296,10 +297,8 @@ protected:
 	
 	// デバッグキー設定
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Debug")
-		class UDebugComponent* DebugComponent;
+		TObjectPtr<UDebugComponent> DebugComponent;
 
-	// キャラクターの動き
-	UCharacterMovementComponent* CharacterMovementComp;
 	//-------------------------------------------------------------------------------------------------------------
 
 	// 死亡アニメーションで倒れてからの再生スピード(1で通常スピード)
@@ -356,8 +355,10 @@ private:
 	FTimerHandle TimerHandle;		
 
 	// ゲームモード保存
-	class ANEOGameMode* pGameMode;
+	UPROPERTY(VisibleAnywhere)
+		TObjectPtr<ANEOGameMode> pGameMode;
 
 	// コントローラー保存
-	class ANEOPlayerController* PlayerController;
+	UPROPERTY(VisibleAnywhere)
+		TObjectPtr<ANEOPlayerController> PlayerController;
 };

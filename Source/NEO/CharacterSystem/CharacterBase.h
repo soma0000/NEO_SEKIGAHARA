@@ -118,6 +118,9 @@ protected:
 	// ゲーム開始時に武器をスポーン
 	void SpawnWeapon_BeginPlay();
 
+	// 何らかのアニメーションが再生中かどうか
+	bool IsAnimationPlaying()const;
+
 	// 指定したパスのアニメーションアセットを返す
 	UAnimMontage* GetAnimationAsset(TCHAR* _animAssetPath);
 
@@ -137,8 +140,8 @@ protected:
 	//-----------------コンポーネント変数--------------------------------------
 
 	// アクションのアシスト用コンポーネント
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Action Assist")
-		class UActionAssistComponent* ActionAssistComp;
+	UPROPERTY(EditAnywhere, Category = "Action Assist")
+		TObjectPtr<class UActionAssistComponent> ActionAssistComp;
 
 	//--------------------------------------------------------------------------
 
@@ -153,18 +156,16 @@ protected:
 private:
 
 	// ゲーム開始時に武器を持たせるかどうか
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, Category = "Weapon", meta = (AllowPrivateAccess = "true"))
 		bool bIsSpawnWeapon_BeginPlay;
 
 	// キャラクターの基本ステータス
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Status", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, Category = "Status", meta = (AllowPrivateAccess = "true"))
 		FCharacterStatus Status;
 
-	// アニメーションインスタンス格納
-	class UCharacterAnimInstance* AnimInstance;
-
 	// 武器クラスのポインタ
-	AWeaponBase* Weapon;
+	UPROPERTY(VisibleAnywhere)
+		TObjectPtr<AWeaponBase> Weapon;
 
 	// 現在所持している武器を判別するEnum
 	EWeaponType WeaponType;

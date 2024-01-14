@@ -7,6 +7,8 @@
 #include "NEOGameState.h"
 #include "NEOGameMode.generated.h"
 
+#define NUM_OF_EVENT (7)
+
 class UProceduralMeshComponent;
 class ANEOGameState;
 
@@ -39,10 +41,7 @@ public:
 	void InitCameraOnPlayer();
 
 	// プレイヤーのカメラ設定
-	void SetPlayerCamera(AActor* _playerCamera) { PlayerCamera = _playerCamera; }
-
-	// プレイヤーにカメラを設定する
-	void SetCameraOnPlayer();
+	void SetPlayerCamera(AActor* _playerCamera) { SplineCamera = _playerCamera; }
 
 	// プレイヤーのカメラを任意のカメラに変更
 	UFUNCTION(BlueprintCallable, Category = "UpdateState")
@@ -53,7 +52,7 @@ public:
 
 	// バトルエリアをセット
 	UFUNCTION(BlueprintCallable, Category = "Area")
-		void SetIsOnBattleArea(bool _IsBattleArea,TArray<class ASpawnPoint*> SpawnPoints,
+		void SetIsOnBattleArea(bool _IsBattleArea,TArray<ASpawnPoint*> SpawnPoints,
 			AActor* Camera,
 			UProceduralMeshComponent* LeftMesh,
 			UProceduralMeshComponent* RightMesh,
@@ -100,35 +99,43 @@ public:
 
 private:
 
-	//バトルエリアのカメラ
-	AActor* BattleAreaCamera;
-
 	// バトルエリアを構成する壁
-	TArray<UProceduralMeshComponent*> BattleAreaMeshs;
+	UPROPERTY(VisibleAnywhere)
+		TArray< TObjectPtr<UProceduralMeshComponent>> BattleAreaMeshs;
 
 	// バトルエリアのフラグ
 	bool bIsOnBattleArea;
 
 	// バトルエリア内の敵を格納
-	TArray<AActor*> Enemies;
+	UPROPERTY(VisibleAnywhere)
+		TArray<TObjectPtr<AActor>> Enemies;
 
 	// 敵をスポーンさせるポイント
-	TArray<class ASpawnPoint*> BattleAreaSpawnPoints;
+	UPROPERTY(VisibleAnywhere)
+		TArray<TObjectPtr<ASpawnPoint>> BattleAreaSpawnPoints;
 
 	// イベント用のインデックス
 	int32 EventIndex;
 
 	// プレイヤーのカメラ格納用(移動するカメラ)
-	AActor* PlayerCamera;
+	UPROPERTY(VisibleAnywhere)
+		TObjectPtr<AActor> SplineCamera;
 
 	// プレイヤーのカメラ(カメラ固定時)
-	AActor* pCamera;
+	UPROPERTY(VisibleAnywhere)
+		TObjectPtr<AActor> pCamera;
+
+	//バトルエリアのカメラ
+	UPROPERTY(VisibleAnywhere)
+		TObjectPtr<AActor> BattleAreaCamera;
 
 	// ゲームステートのポインタ
-	ANEOGameState* pGameState;
+	UPROPERTY(VisibleAnywhere)
+		TObjectPtr<ANEOGameState> pGameState;
 
 	// プレイヤーコントローラーのポインタ
-	class ANEOPlayerController* PlayerController;
+	UPROPERTY(VisibleAnywhere)
+		TObjectPtr<class ANEOPlayerController> PlayerController;
 
 	FTimerHandle TimerHandle;
 };

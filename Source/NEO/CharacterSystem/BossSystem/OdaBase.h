@@ -17,7 +17,7 @@
 #include "NiagaraComponent.h"									//ナイアガラエフェクトを呼ぶために必要なヘッダー
 #include "NiagaraFunctionLibrary.h"								//ナイアガラエフェクトを呼ぶために必要なヘッダー
 #include "NEO/CharacterSystem/ActionAssistComponent.h"
-#include "NEO/CharacterSystem/CharacterBase.h"
+#include "NEO/CharacterSystem/EnemyBase.h"
 
 #include "OdaBase.generated.h"
 
@@ -55,7 +55,7 @@ struct FBossSpeed {
 };
 
 UCLASS()
-class NEO_API AOdaBase : public ACharacterBase
+class NEO_API AOdaBase : public AEnemyBase
 {
 	GENERATED_BODY()
 
@@ -496,8 +496,6 @@ public:
 //////////////////////////////////////////////////////////////////////////
 //死亡処理
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Area")
-		bool IsAreaEnemy = false;
 
 	void Death();
 

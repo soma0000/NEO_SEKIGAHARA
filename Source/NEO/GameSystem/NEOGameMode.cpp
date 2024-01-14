@@ -5,14 +5,16 @@
 #include "Kismet/GameplayStatics.h"
 #include "Camera/CameraComponent.h"
 #include "ProceduralMeshComponent.h"
-#include "NEO/GameSystem/SplineCamera.h"
 #include "NEO/GameSystem/GameSystem_BattleArea.h"
 #include "NEO/GameSystem/SpawnPoint.h"
-#include "NEO/CharacterSystem/BossSystem/OdaBase.h"
-#include "NEO/CharacterSystem/Enemy/EnamyBase.h"
+#include "NEO/CharacterSystem/EnemyBase.h"
+#include "NEO/CharacterSystem/PlayerSystem/PlayerBase.h"
 #include "NEO/CharacterSystem/PlayerSystem/NEOPlayerController.h"
 
+
+
 ANEOGameMode::ANEOGameMode()
+	: bIsOnBattleArea(false)
 {
 
 }
@@ -50,28 +52,7 @@ void ANEOGameMode::Tick(float DeltaTime)
 // カメラの初期設定
 void ANEOGameMode::InitCameraOnPlayer()
 {
-	SetViewTargetWithBlend(PlayerCamera);
-}
-
-
-/*
- * 関数名　　　　：SetCameraOnPlayer()
- * 処理内容　　　：プレイヤーのカメラ設定
- * 戻り値　　　　：なし
- */
-void ANEOGameMode::SetCameraOnPlayer()
-{
-	if (PlayerController) { return; }
-
-	// プレイヤーが生きていることを確認
-	if (!PlayerController->GetPlayerIsDead())
-	{
-		// バトルエリア内にいるかどうかでカメラを選択
-		AActor* NowCamera = (bIsOnBattleArea) ? (pCamera) : (PlayerCamera);
-
-		// プレイヤーのカメラに設定
-		SetViewTargetWithBlend(NowCamera);
-	}
+	SetViewTargetWithBlend(SplineCamera);
 }
 
 
@@ -87,14 +68,9 @@ void ANEOGameMode::SetCameraOnPlayer()
  */
 void ANEOGameMode::SetViewTargetWithBlend(AActor* _newViewTarget, float _blendTime, EViewTargetBlendFunction _blendFunc, float _blendExp, bool _bLockOutgoing)
 {
-	// プレイヤーコントローラーを取得
-	PlayerController = Cast<ANEOPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+	if (!PlayerController) { return; }
 
-	// コントローラーがある時カメラをブレンド
-	if (PlayerController)
-	{
-		PlayerController->SetViewTargetWithBlend(_newViewTarget, _blendTime);
-	}
+	PlayerController->SetViewTargetWithBlend(_newViewTarget, _blendTime);
 
 	// カメラを新しいカメラへ
 	pCamera = _newViewTarget;
@@ -109,14 +85,10 @@ void ANEOGameMode::SetViewTargetWithBlend(AActor* _newViewTarget, float _blendTi
 AActor* ANEOGameMode::GetNowPlayerCamera()const
 {
 	// バトルエリア内にいるかどうかでカメラを選択
-	AActor* NowCamera = (bIsOnBattleArea) ? (pCamera) : (PlayerCamera);
+	AActor* NowCamera = (bIsOnBattleArea) ? (pCamera) : (SplineCamera);
 
-	if (NowCamera)
-	{
-		return NowCamera;
-	}
 	
-	return nullptr;
+	return NowCamera;
 }
 
 
@@ -145,8 +117,6 @@ void ANEOGameMode::SetIsOnBattleArea(bool _IsBattleArea,TArray<class ASpawnPoint
 		BattleAreaMeshs.Add(LeftMesh);
 		BattleAreaMeshs.Add(RightMesh);
 		BattleAreaMeshs.Add(NearMesh);
-
-		BattleAreaCamera = Camera;
 
 		//スポーンポイントをゲームステートに登録する
 		BattleAreaSpawnPoints.Reset();
@@ -236,9 +206,9 @@ void ANEOGameMode::ExitBattleArea()
 	//固定カメラをプレイヤーのカメラに変更
 	if (!PlayerController->GetPlayerIsDead())
 	{
-		if (PlayerCamera)
+		if (SplineCamera)
 		{
-			SetViewTargetWithBlend(PlayerCamera, 1.f);
+			SetViewTargetWithBlend(SplineCamera, 1.f);
 		}
 	}
 	else
@@ -274,20 +244,13 @@ AActor* ANEOGameMode::SpawnEnemy(ASpawnPoint* spawnPoint)
 
 
 	// ポインタ取得
-	AOdaBase* Boss = Cast<AOdaBase>(spawn_Actor);
-	AEnamyBase* Enemy = Cast<AEnamyBase>(spawn_Actor);
+	AEnemyBase* Enemy = Cast<AEnemyBase>(spawn_Actor);
 
 	if (Enemy) {
 		Enemy->SetActorTransform(spawnTransform);
-		Enemy->IsAreaEnemy = true;
+		Enemy->SetIsAreaEnemy(true);	//Flag Set 
 
 		return Enemy;
-	}
-	else if (Boss) {
-		Boss->SetActorTransform(spawnTransform);
-		Boss->IsAreaEnemy = true; 
-
-		return Boss;
 	}
 
 	return nullptr;

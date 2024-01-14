@@ -72,6 +72,7 @@ void UActionAssistComponent::CorrectAttackAngle()
 		// 最大角度を超えたら
 		if (FMath::Abs(CorrectAngle) <= MaxCorrectAngle)
 		{
+			// 最大角度に補正
 			CorrectAngle = (CorrectAngle < 0) ? (-MaxCorrectAngle) : (MaxCorrectAngle);
 		}
 
@@ -79,39 +80,6 @@ void UActionAssistComponent::CorrectAttackAngle()
 		FRotator NewRotation(CurrentRotation.Pitch, CorrectAngle, CurrentRotation.Roll);
 		Owner->SetActorRotation(NewRotation);
 	}
-}
-
-
-/*
- * 関数名　　　　：HitStop()
- * 引数１　　　　：float _speedDuringHitStop・・・止まっているときのスピード(1.fで通常の速さ)
- * 引数２　　　　：float _stopTime・・・止める時間
- * 処理内容　　　：ヒットストップを起こす
- * 戻り値　　　　：なし
- */
-void UActionAssistComponent::HitStop(float _speedDuringHitStop, float _stopTime)
-{
-	// 機能のオン・オフ
-	if (!bUseHitStop) { return; }
-
-	// キャラクターの情報取得
-	ACharacter* Character = Cast<ACharacter>(GetOwner());
-
-	// キャラクターが取得できなかったらリターン
-	if (!Character) { return; }
-
-	// キャラクターのメッシュ取得
-	USkeletalMeshComponent* CharacterMesh = Character->GetMesh();
-
-	// キャラクターのメッシュが取得できなかったらリターン
-	if (!CharacterMesh) { return; }
-
-	// HitStopを開始
-	CharacterMesh->GlobalAnimRateScale = _speedDuringHitStop;
-
-	// HitStopを停止
-	FTimerManager& TimerManager = GetWorld()->GetTimerManager();
-	TimerManager.SetTimer(TimerHandle_HitStop, this, &UActionAssistComponent::EndHitStop, _stopTime, false);
 }
 
 
@@ -137,7 +105,7 @@ void UActionAssistComponent::SpawnEffect(UNiagaraSystem* _hitParticle, FVector _
 /*
  * 関数名　　　　：CameraShake()
  * 引数１　　　　：TSubclassOf<UCameraShakeBase> _shakePattern・・・揺らすパターン
- * 引数２　　　　：float _scale・・・・・・・・・・・・・・・・・・・・強さ
+ * 引数２　　　　：float _scale ・・・・・・・・・・・・・・・・・・強さ
  * 処理内容　　　：カメラシェイク
  * 戻り値　　　　：なし
  */
@@ -176,14 +144,22 @@ void UActionAssistComponent::PlaySound(USoundBase* _sound_Obj, float _startTime 
 /*
  * 関数名　　　　：GetFrontActor()
  * 処理内容　　　：敵が直線状にいるか判定
- * 戻り値　　　　：見つけた敵の情報を返す
+ * 戻り値　　　　：見つけたActorの情報を返す
  */
 AActor* UActionAssistComponent::GetFrontActor()
 {
 	// 所有者の情報取得
 	AActor* pOwner = GetOwner();
 
+	// 見つけた敵を格納
+	AActor* HitEnemy;
+
 	if (pOwner)
+	{
+		// オーナーがいない場合null
+		HitEnemy = nullptr;
+	}
+	else
 	{
 		// レイを飛ばす
 		// 飛ばす方向指定
@@ -205,40 +181,12 @@ AActor* UActionAssistComponent::GetFrontActor()
 
 		// ヒットした場合true
 		bool isHit = GetWorld()->LineTraceSingleByChannel(OutHit, start, end, ECC_WorldStatic, CollisionParams);
-		//DrawDebugLine(GetWorld(), start, end, FColor::Green, true, 1.0f);
 
-		if (isHit)
-		{
-			AActor* HitEnemy = OutHit.GetActor();
-
-			// "Enemy"タグを持っているActorのみを返す
-			if (HitEnemy->ActorHasTag("Enemy"))
-			{
-				return HitEnemy;
-			}
-		}
+		// ヒットしていたらActorを格納していなかったらnull
+		HitEnemy = (isHit) ? (OutHit.GetActor()) : (nullptr);
 	}
 
-	return nullptr;
-}
-
-
-/*
- * 関数名　　　　：EndHitStop()
- * 処理内容　　　：ヒットストップ終了
- * 戻り値　　　　：なし
- */
-void UActionAssistComponent::EndHitStop()
-{
-	// キャラクター取得
-	ACharacter* Character = Cast<ACharacter>(GetOwner());
-	if (Character == nullptr) {
-		UE_LOG(LogTemp, Error, TEXT("AttackAssitComponent: Character is nullptr"));
-		return;
-	}
-
-	//HitStopを停止
-	Character->GetMesh()->GlobalAnimRateScale = 1.f;
+	return HitEnemy;
 }
 
 
@@ -304,36 +252,4 @@ double UActionAssistComponent::GetAngle_Pitch(bool _lookRight, double _camera_Pi
 	double NewAngle = (!_lookRight)?(_camera_Pitch):(-_camera_Pitch);
 
 	return NewAngle;
-}
-
-
-// 壁とのレイキャストを行う関数
-bool UActionAssistComponent::WallCheck(float _lineLength)
-{
-	// オーナー取得
-	AActor* pOwner = GetOwner();
-
-	if (!pOwner) { return false; }
-
-	// レイキャストを実行する際のパラメータを設定する
-	// レイキャストの開始位置はキャラクターの現在位置
-	float Rotation_Z = pOwner->GetActorRotation().Yaw;
-	float LineLength = (Rotation_Z > 0) ? (_lineLength) : (-_lineLength);
-
-	// 始点
-	FVector start = pOwner->GetActorLocation();
-	// 終点
-	FVector end = FVector(start.X, start.Y + LineLength, start.Z);
-
-	FCollisionQueryParams CollisionParams;
-	// オーナー自身は除外
-	CollisionParams.AddIgnoredActor(pOwner);
-
-	FHitResult HitResult;
-
-	// レイトレースを行う
-	bool IsHit = GetWorld()->LineTraceSingleByChannel(HitResult, start, end, ECC_WorldStatic, CollisionParams);
-
-
-	return IsHit;
 }

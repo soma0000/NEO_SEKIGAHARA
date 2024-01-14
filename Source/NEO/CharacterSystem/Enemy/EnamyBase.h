@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "NEO/CharacterSystem/CharacterBase.h"
+#include "NEO/CharacterSystem/EnemyBase.h"
 #include "DeathTrigger.h"
 #include "NEO/GameSystem/GameSystem_BattleArea.h"
 #include "NiagaraComponent.h"
@@ -11,8 +11,9 @@
 #include "Components/SplineComponent.h"
 #include "EnamyBase.generated.h"
 
+
 UCLASS()
-class NEO_API AEnamyBase : public ACharacterBase
+class NEO_API AEnamyBase : public AEnemyBase
 {
 	GENERATED_BODY()
 
@@ -20,8 +21,6 @@ public:
 	// Sets default values for this character's properties
 	AEnamyBase();
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Area")
-	bool IsAreaEnemy = false;
 	//アニメーション
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
 		UAnimMontage* Attack;

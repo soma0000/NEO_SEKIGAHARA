@@ -20,9 +20,6 @@ public:
 	// 攻撃の角度修正
 	void CorrectAttackAngle();
 
-	// ヒットストップ処理
-	void HitStop(float _speedDuringHitStop, float _stopTime);
-
 	// エフェクトスポーン
 	void SpawnEffect(class UNiagaraSystem* _hitParticle, FVector _spawnPos);
 
@@ -34,9 +31,6 @@ public:
 
 	// サウンド再生
 	void PlaySound(class USoundBase* _sound_Obj, float StartTime = 0);
-
-	// レイを飛ばす
-	bool WallCheck(float _lineLength);
 
 protected:
 
@@ -50,9 +44,6 @@ private:
 
 	// 前方にいるActorを返す
 	AActor* GetFrontActor();
-
-	// ヒットストップ終了
-	void EndHitStop();
 
 	// オーナーの次の傾き取得
 	double GetAngle_Yaw(bool _lookRight, double _camera_Yaw);

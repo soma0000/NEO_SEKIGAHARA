@@ -17,6 +17,7 @@
 // Sets default values
 APlayerBase::APlayerBase()
 	: State(EPlayerState::Idle)
+	, IsKicking(false)
 	, IsInvincibility(false)
 	, frames(0.f)
 	, CanCombo(true)
@@ -61,7 +62,6 @@ void APlayerBase::BeginPlay()
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
 			Subsystem->AddMappingContext(MainActionMapping.DefaultMappingContext, 0);
-			Subsystem->AddMappingContext(DebugComponent->GetDebugKeyMapping().DebugKeyMappingContext, 1);
 		}
 	}
 }
@@ -90,7 +90,6 @@ void APlayerBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 		// 移動
 		EnhancedInputComponent->BindAction(MainActionMapping.MoveAction, ETriggerEvent::Triggered, this, &APlayerBase::Move);
 		EnhancedInputComponent->BindAction(MainActionMapping.MoveAction, ETriggerEvent::Completed, this, &APlayerBase::Stop);
-
 
 		// ジャンプ
 		EnhancedInputComponent->BindAction(MainActionMapping.JumpAction, ETriggerEvent::Started, this, &APlayerBase::JumpStart);
@@ -159,8 +158,9 @@ void APlayerBase::InitPlayerData()
 	// ステータス初期化
 	InitStatus(2, 500.f, 150.f, 1.f);
 
-	InvincibilityTime_Short = 0.3f;
-	InvincibilityTime_Long = 0.5f;
+	// 被ダメージ時の無敵時間設定
+	InvincibilityTime_Short = 0.3f;			// 通常状態
+	InvincibilityTime_Long = 0.5f;			// 武器を落とすとき
 
 	// 武器種によってソケットを変更
 	SocketNames.Add("hand_rSocket_Sword");
@@ -180,8 +180,7 @@ void APlayerBase::InitPlayerData()
 void APlayerBase::SetupPlayerStatus()
 {
 	// 移動速度設定
-	CharacterMovementComp = GetCharacterMovement();
-	CharacterMovementComp->MaxWalkSpeed = GetStatus().MoveSpeed;
+	GetCharacterMovement()->MaxWalkSpeed = GetStatus().MoveSpeed;
 
 	// 武器を落とすまでの被ダメージ回数設定
 	DefaultDamageLimit = GetStatus().HP;
@@ -241,7 +240,7 @@ void APlayerBase::Stop()
 	// 移動中以外はスルー
 	if (State != EPlayerState::Move) { return; }
 
-	// 停止へ
+	// ステートを停止へ
 	State = EPlayerState::Idle;
 }
 
@@ -253,6 +252,8 @@ void APlayerBase::Stop()
  */
 void APlayerBase::JumpStart()
 {
+	if (!IsPlayerGrounded()) { return; }
+
 	// 停止中と移動中のみジャンプ可
 	if (State == EPlayerState::Idle || State == EPlayerState::Move)
 	{
@@ -304,10 +305,10 @@ void APlayerBase::Jump()
  */
 bool APlayerBase::IsPlayerGrounded() const
 {
-	if (!CharacterMovementComp) { return false; }
+	UCharacterMovementComponent* MovementComp = GetCharacterMovement();
 
-	// 接地しているか
-	bool IsGrounded = CharacterMovementComp->IsFalling() == false;
+	// 接地しているか　ムーブメントコンポーネントが取得できない場合は必ずfalse
+	bool IsGrounded = (!MovementComp) ? (false) : (!(MovementComp->IsFalling()));
 
 	return IsGrounded;
 }
@@ -403,13 +404,16 @@ void APlayerBase::Attack_Sword(TTuple<TArray<AActor*>, TArray<FVector>> HitActor
 	// 武器が取得できないとき処理しない
 	if (!GetWeapon()) { return; }
 
-	// 当たったActorを取得
+	// 当たったActorと位置を取得
 	TArray<AActor*> HitActors = HitActorAndLocation.Get<0>();
 	TArray<FVector> HitLocations = HitActorAndLocation.Get<1>();
 
-	// コンボの最終段を取得する式
-	auto GetComboLastIndex = [this]() -> int32 {
-		return ComboStartSectionNames.Num() - 1;
+	// コンボが最終段かどうか取得する式
+	auto GetIsLastAttack = [this]()->bool 
+	{
+		bool IsLastAttack = GetComboIndex() == ComboStartSectionNames.Num() - 1;
+
+		return IsLastAttack;
 	};
 
 	// ヒットしたActorの数だけ繰り返し
@@ -442,7 +446,7 @@ void APlayerBase::Attack_Sword(TTuple<TArray<AActor*>, TArray<FVector>> HitActor
 			if (HitEnemy)
 			{
 				// エネミーに攻撃
-				HitEnemy->TakedDamage(GetDamageAmount());
+				HitEnemy->TakedDamage(GetDamageAmount(), GetIsLastAttack());
 			}
 
 			// ヒットストップ
@@ -455,9 +459,11 @@ void APlayerBase::Attack_Sword(TTuple<TArray<AActor*>, TArray<FVector>> HitActor
 			}
 
 			// コンボの最後にカメラを揺らす
-			if (GetComboIndex() == GetComboLastIndex())
+			if (GetIsLastAttack())
 			{
-				ActionAssistComp->CameraShake(ShakePattern);
+				float ForwardVector_Y = GetActorForwardVector().Y;
+
+				ActionAssistComp->CameraShake(ShakePattern, ForwardVector_Y);
 			}
 
 			// 刀用のヒット音再生
@@ -478,13 +484,16 @@ void APlayerBase::Attack_Lance(TTuple<TArray<AActor*>, TArray<FVector>> HitActor
 	// 武器が取得できないとき処理しない
 	if (!GetWeapon()) { return; }
 
-	// 当たったActorを取得
+	// 当たったActorと位置を取得
 	TArray<AActor*> HitActors = HitActorAndLocation.Get<0>();
 	TArray<FVector> HitLocations = HitActorAndLocation.Get<1>();
 
-	// コンボの最終段を取得する式
-	auto GetComboLastIndex = [this]() -> int32 {
-		return ComboStartSectionNames.Num() - 1;
+	// コンボが最終段かどうか取得する式
+	auto GetIsLastAttack = [this]()->bool
+	{
+		bool IsLastAttack = GetComboIndex() == ComboStartSectionNames.Num() - 1;
+
+		return IsLastAttack;
 	};
 
 	// ヒットしたActorの数だけ繰り返し
@@ -517,7 +526,7 @@ void APlayerBase::Attack_Lance(TTuple<TArray<AActor*>, TArray<FVector>> HitActor
 			if (HitEnemy)
 			{
 				// エネミーに攻撃
-				HitEnemy->TakedDamage(GetDamageAmount());
+				HitEnemy->TakedDamage(GetDamageAmount(), GetIsLastAttack());
 			}
 
 			// ヒットストップ
@@ -530,9 +539,11 @@ void APlayerBase::Attack_Lance(TTuple<TArray<AActor*>, TArray<FVector>> HitActor
 			}
 
 			// コンボの最後にカメラを揺らす
-			if (GetComboIndex() == GetComboLastIndex())
+			if (GetIsLastAttack())
 			{
-				ActionAssistComp->CameraShake(ShakePattern);
+				float ForwardVector_Y = GetActorForwardVector().Y;
+
+				ActionAssistComp->CameraShake(ShakePattern, ForwardVector_Y);
 			}
 
 			// 槍用のヒット音再生
@@ -556,66 +567,65 @@ void APlayerBase::Attack_Gun()
 	{
 		// 銃の射撃処理
 		Cast<AGun>(GetWeapon())->Shoot();
+
+		return;
 	}
-	else
+
+	// 足元の位置を取得
+	FVector Start = GetMesh()->GetSocketLocation("player_finished1_R_ankle");
+	FVector End = Start;
+
+	// 当たったオブジェクトを格納する
+	TArray<FHitResult> OutHitResults;
+
+	//当たっているか確認
+	bool IsHit = GetWeapon()->GetHitResults(OutHitResults, Start, End);
+
+	// 当たっていなかったらスルー
+	if (!IsHit) { return; }
+
+	// 最初に当たったオブジェクトのみ使用
+	FHitResult FirstHitObj = OutHitResults[0];
+
+	// 最初に当たったActorと当たった位置を取得
+	AActor* HitActor = FirstHitObj.GetActor();
+	FVector HitLocation = FirstHitObj.Location;
+
+	// オブジェクトに当たっている場合
+	if (HitActor && HitActor->ActorHasTag("Object"))
 	{
+		// 破壊可能オブジェクトの情報取得
+		AObjectBase* BreakObj = Cast<AObjectBase>(HitActor);
 
-		// 足元の位置を取得
-		FVector Start = GetMesh()->GetSocketLocation("player_finished1_R_ankle");
-		FVector End = Start;
-
-		// 当たったオブジェクトを格納する
-		TArray<FHitResult> OutHitResults;
-
-		//当たっているか確認
-		bool IsHit = GetWeapon()->GetHitResults(OutHitResults, Start, End);
-
-		// 当たっていなかったらスルー
-		if (!IsHit) { return; }
-
-		// 最初に当たったオブジェクトのみ使用
-		FHitResult FirstHitObj = OutHitResults[0];
-
-		// 最初に当たったActorと当たった位置を取得
-		AActor* HitActor = FirstHitObj.GetActor();
-		FVector HitLocation = FirstHitObj.Location;
-
-		// オブジェクトに当たっている場合
-		if (HitActor && HitActor->ActorHasTag("Object"))
+		// 破壊!!
+		if (BreakObj)
 		{
-			// 破壊可能オブジェクトの情報取得
-			AObjectBase* BreakObj = Cast<AObjectBase>(HitActor);
-
-			// 破壊!!
-			if (BreakObj)
-			{
-				BreakObj->ReceiveDamage(GetDamageAmount());
-			}
+			BreakObj->ReceiveDamage(GetDamageAmount());
 		}
-		// 敵に当たっている場合
-		else if (HitActor && HitActor->ActorHasTag("Enemy"))
+	}
+	// 敵に当たっている場合
+	else if (HitActor && HitActor->ActorHasTag("Enemy"))
+	{
+		// ヒットした敵取得
+		ACharacterBase* HitEnemy = Cast<ACharacterBase>(HitActor);
+
+		if (HitEnemy)
 		{
-			// ヒットした敵取得
-			ACharacterBase* HitEnemy = Cast<ACharacterBase>(HitActor);
-
-			if (HitEnemy)
-			{
-				// 敵への攻撃
-				HitEnemy->TakedDamage(GetDamageAmount());
-			}
-
-			// ヒットストップ
-			HitStop(HitStopSpeed, HitStopTime);
-
-			// ヒットエフェクト表示
-			if (HitEffect)
-			{
-				ActionAssistComp->SpawnEffect(HitEffect, HitLocation);
-			}
-
-			// 蹴り用のヒット音再生
-			ActionAssistComp->PlaySound(PlayerSounds.Kick);
+			// 敵への攻撃
+			HitEnemy->TakedDamage(10.f);
 		}
+
+		// ヒットストップ
+		HitStop(HitStopSpeed, HitStopTime);
+
+		// ヒットエフェクト表示
+		if (HitEffect)
+		{
+			ActionAssistComp->SpawnEffect(HitEffect, HitLocation);
+		}
+
+		// 蹴り用のヒット音再生
+		ActionAssistComp->PlaySound(PlayerSounds.Kick);
 	}
 }
 
@@ -680,20 +690,20 @@ void APlayerBase::PlayComboAnimtion_Lance(int _attackNum)
  */
 void APlayerBase::PlayComboAnimtion_Gun(int _attackNum)
 {
-	if (State == EPlayerState::Attack) { return; }
+	// コンボ不可の時スルー
+	if (!CanCombo) { return; }
 
-	// 攻撃中フラグオン
-	State = EPlayerState::Attack;
-
+	// 蹴り攻撃フラグオン
 	if (_attackNum == 0)
 	{
 		IsKicking = true;
-		PlayAnimation(PlayerAnimation.GunAttack2);
 	}
-	else
-	{
-		PlayAnimation(PlayerAnimation.GunAttack);
-	}
+
+	// 対応するアニメーション再生
+	PlayAnimation(PlayerAnimation.GunAttack[_attackNum]);
+
+	// ステートを攻撃中へ
+	State = EPlayerState::Attack;
 }
 
 
@@ -723,11 +733,11 @@ void APlayerBase::RotateCharacter(float _nowInput_X)
  */
 void APlayerBase::SlowDownDeathAnimationRate()
 {
-	// 遅くする
+	// メッシュのアニメーション速度を遅くする
 	GetMesh()->GlobalAnimRateScale = DeadAnimRate;
 
 
-	// プレイヤーを削除
+	// プレイヤーを削除するまでのタイマーをセット
 	FTimerManager& TimerManager = GetWorld()->GetTimerManager();
 	TimerManager.SetTimer(TimerHandle, this, &APlayerBase::CallControllerFunc_DestroyPlayer, DeadToGameOverTime, false);
 }
@@ -765,13 +775,83 @@ void APlayerBase::CallControllerFunc_DestroyPlayer()
  * 関数名　　　　：ResetAllAttackFlags()
  * 処理内容　　　：攻撃に関するフラグをすべてリセット
  * 戻り値　　　　：なし
- */void APlayerBase::ResetAllAttackFlags()
+ */
+void APlayerBase::ResetAllAttackFlags()
  {
 	 // 攻撃中のフラグリセット
 	 CanCombo = true;
 	 IsKicking = false;
 	 ComboIndex = 0;
 	 State = EPlayerState::Idle;
+ }
+
+
+/*
+ * 関数名　　　　：OnDeath()
+ * 処理内容　　　：プレイヤーの被ダメージ時の処理
+ * 戻り値　　　　：なし
+ */
+void APlayerBase::OnDamage(bool _isLastAttack)
+{
+	// 被ダメージ状態へ
+	State = EPlayerState::Damage;
+
+	// 無敵にする
+	SetInvincibilityOn();
+
+	// 敵のコンボが最終段だった時必ず武器を落とす
+	if (_isLastAttack)
+	{
+		DefaultDamageLimit = 0;
+	}
+
+	// 無敵解除時間格納用
+	float InvincibilityReleaseTime;
+
+	// 被ダメージアニメーション
+	if (DefaultDamageLimit <= 0)
+	{
+		// 長い無敵時間を適用
+		InvincibilityReleaseTime = InvincibilityTime_Long;
+
+		// 武器を落とす
+		DetachWeapon(false);
+
+		// ノックバックアニメーション再生
+		PlayAnimation(PlayerAnimation.KnockBack);
+	}
+	else
+	{
+		// 短い無敵時間を適用
+		InvincibilityReleaseTime = InvincibilityTime_Long;
+
+		// 攻撃を受ける
+		--DefaultDamageLimit;
+
+		// のけぞりアニメーション再生
+		PlayAnimation(PlayerAnimation.TakeDamage);
+	}
+
+	// 一定時間後に無敵解除
+	FTimerManager& TimerManager = GetWorld()->GetTimerManager();
+	TimerManager.SetTimer(TimerHandle, this, &APlayerBase::SetInvincibilityOff, InvincibilityReleaseTime, false);
+}
+
+/*
+ * 関数名　　　　：OnDeath()
+ * 処理内容　　　：プレイヤーの死亡時の処理
+ * 戻り値　　　　：なし
+ */
+ void APlayerBase::OnDeath()
+ {
+	 // 死亡状態へ
+	 State = EPlayerState::Death;
+
+	 // コリジョンをオフに
+	 SetActorEnableCollision(true);
+
+	 // 死亡アニメーション再生
+	 PlayAnimation(PlayerAnimation.Death);
  }
 
 
@@ -819,7 +899,6 @@ void APlayerBase::CallControllerFunc_DestroyPlayer()
  {
 	 // 無敵を解除してステートを被ダメージ状態に
 	 IsInvincibility = true;
-	 State = EPlayerState::Damage;
  }
 
 
@@ -832,7 +911,6 @@ void APlayerBase::CallControllerFunc_DestroyPlayer()
  {
 	 // 無敵を解除してステートを通常状態に
 	 IsInvincibility = false;
-	 State = EPlayerState::Idle;
  }
 
  /*
@@ -849,17 +927,7 @@ void APlayerBase::CallControllerFunc_DestroyPlayer()
 	 // 武器を持っていないときに攻撃を受けたら死亡
 	 if (!GetWeapon() && State != EPlayerState::Death)
 	 {
-		 // 死亡状態へ
-		 State = EPlayerState::Death;
-
-		 // コリジョンをオフに
-		 SetActorEnableCollision(true);
-
-		 // ヒットエフェクト発生
-		 ActionAssistComp->SpawnEffect(HitEffect, GetActorLocation());
-
-		 // 死亡アニメーション再生
-		 PlayAnimation(PlayerAnimation.Death);
+		 OnDeath();
 	 }
 	 // 武器を持っているとき
 	 else
@@ -867,52 +935,12 @@ void APlayerBase::CallControllerFunc_DestroyPlayer()
 		 // 攻撃中のフラグをすべてリセット
 		 ResetAllAttackFlags();
 
-		 // 無敵にする
-		 IsInvincibility = true;
-
-		 // 敵のコンボが最終段だった時必ず武器を落とす
-		 if (_isLastAttack)
-		 {
-			 DefaultDamageLimit = 0;
-		 }
-
-		 // 無敵解除時間格納用
-		 float InvincibilityReleaseTime;
-
-		 // 被ダメージアニメーション
-		 if (DefaultDamageLimit <= 0)
-		 {
-			 // 長い無敵時間を適用
-			 InvincibilityReleaseTime = InvincibilityTime_Long;
-
-			 // 武器を落とす
-			 DetachWeapon(false);
-
-			 // ノックバックアニメーション再生
-			 PlayAnimation(PlayerAnimation.KnockBack);
-		 }
-		 else
-		 {
-			 // 短い無敵時間を適用
-			 InvincibilityReleaseTime = InvincibilityTime_Long;
-
-			 // 攻撃を受ける
-			 --DefaultDamageLimit;
-
-			 // のけぞりアニメーション再生
-			 PlayAnimation(PlayerAnimation.TakeDamage);
-		 }
-
-		 // 無敵設定
-		 SetInvincibilityOn();
-
-		 // 一定時間後に無敵解除
-		 FTimerManager& TimerManager = GetWorld()->GetTimerManager();
-		 TimerManager.SetTimer(TimerHandle, this, &APlayerBase::SetInvincibility, InvincibilityReleaseTime, false);
-
-		 // ヒットエフェクト発生
-		 ActionAssistComp->SpawnEffect(HitEffect, GetActorLocation());
+		 // ダメージ処理
+		 OnDamage(_isLastAttack);
 	 }
+
+	 // ヒットエフェクト発生
+	 ActionAssistComp->SpawnEffect(HitEffect, GetActorLocation());
  }
 
  //-----------------------デバッグ用関数-----------------------------------------------------------
@@ -991,8 +1019,10 @@ void APlayerBase::CallControllerFunc_DestroyPlayer()
   */
  void APlayerBase::SetDeath()
  {
-	 // 死亡アニメーション再生
-	 PlayAnimation(PlayerAnimation.Death);
+	 // 武器を落とす
+	 DetachWeapon(false);
+
+	 TakedDamage(0);
  }
 
  //------------------------------------------------------------------------------------------------

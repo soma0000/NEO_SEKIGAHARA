@@ -21,9 +21,6 @@ void UDebugComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// シッピング時デバッグキーを省く
-#if UE_BUILD_DEBUG || UE_BUILD_DEVELOPMENT
-
 	// プレイヤーコントローラーを取得
 	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 
@@ -34,8 +31,6 @@ void UDebugComponent::BeginPlay()
 			Subsystem->AddMappingContext(DebugActions.DebugKeyMappingContext, 1);
 		}
 	}
-
-#endif
 }
 
 
@@ -46,12 +41,13 @@ void UDebugComponent::BeginPlay()
  */
 void UDebugComponent::SetupDebugInputComponent(UInputComponent* DebugInputComponent)
 {
-	// シッピング時デバッグキーを省く
-#if UE_BUILD_DEBUG || UE_BUILD_DEVELOPMENT
 
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(DebugInputComponent))
 	{
 		EnhancedInputComponent->BindAction(DebugActions.Debug_ESC, ETriggerEvent::Started, this, &UDebugComponent::TriggerDebugEvent_ESC);
+
+// シッピング時デバッグキーを省く
+#if UE_BUILD_DEBUG || UE_BUILD_DEVELOPMENT
 		EnhancedInputComponent->BindAction(DebugActions.Debug_F1, ETriggerEvent::Started, this, &UDebugComponent::TriggerDebugEvent_F1);
 		EnhancedInputComponent->BindAction(DebugActions.Debug_F2, ETriggerEvent::Started, this, &UDebugComponent::TriggerDebugEvent_F2);
 		EnhancedInputComponent->BindAction(DebugActions.Debug_F3, ETriggerEvent::Started, this, &UDebugComponent::TriggerDebugEvent_F3);
@@ -64,8 +60,9 @@ void UDebugComponent::SetupDebugInputComponent(UInputComponent* DebugInputCompon
 		EnhancedInputComponent->BindAction(DebugActions.Debug_F10, ETriggerEvent::Started, this, &UDebugComponent::TriggerDebugEvent_F10);
 		EnhancedInputComponent->BindAction(DebugActions.Debug_F11, ETriggerEvent::Started, this, &UDebugComponent::TriggerDebugEvent_F11);
 		EnhancedInputComponent->BindAction(DebugActions.Debug_F12, ETriggerEvent::Started, this, &UDebugComponent::TriggerDebugEvent_F12);
-	}	
 
 #endif
+
+	}	
 
 }

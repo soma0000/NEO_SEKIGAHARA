@@ -22,7 +22,7 @@ AOdaBase::AOdaBase() :
 	ShockWaveDamage(10.f),
 	UltShockWaveDamage(5.f),
 	UltDamage(30.f),
-	OdaSpeed{1.f,3.f,.5f},
+	OdaSpeed{1.5f,2.f,.5f},
 	OneMoreShockWave(false),
 	ChangeFlontTimer(200),
 	isShockWaveSpawnTiming(false),
@@ -212,7 +212,7 @@ void AOdaBase::Tick(float DeltaTime)
 				BacktoStayCase();
 			}
 			//レイを飛ばして後ろ方向の壁に当たったら
-			else if (ActionAssistComp->WallCheck(-100.f))
+			else if (WallCheck(-100.f))
 			{
 				//処理を変える
 				IsWallCheck(ECPPOdaEnum::MoveBack);
@@ -665,7 +665,7 @@ void AOdaBase::OdaUlt(int Timer)
 		//振り向かないようにする
 		isNowAttacking = true;
 		//レイを飛ばして後ろ方向の壁に当たったら
-		if (ActionAssistComp->WallCheck(-100.f))
+		if (WallCheck(-100.f))
 		{
 			//処理を変える
 			IsWallCheck(ECPPOdaEnum::Ultimate);
@@ -1154,7 +1154,7 @@ void AOdaBase::Death()
 		{
 			//現在エラーで落ちるので普通に消す
 			//ゲームモードを用いて消す
-			GameMode->DestroyEnemy(this, IsAreaEnemy);
+			GameMode->DestroyEnemy(this, GetIsAreaEnemy());
 		}
 	}
 }

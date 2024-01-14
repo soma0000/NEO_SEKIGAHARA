@@ -43,32 +43,34 @@ public:
 protected:
 
 	// オーナーをキャラクタークラスで取得
-	ACharacter* OwnerCharacter;
+	UPROPERTY(VisibleAnywhere)
+		TObjectPtr<ACharacter> OwnerCharacter;
 
 	// オーナーのMovementComponent保存用
-	class UCharacterMovementComponent* CharacterMovementComp;
+	UPROPERTY(VisibleAnywhere)
+		TObjectPtr<class UCharacterMovementComponent> CharacterMovementComp;
 
 	// 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly,Category = "Owner Status")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Category = "Owner Status")
 		FVector Velocity;
 
 	//歩行速度
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Owner Status")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Owner Status")
 		float GroundSpeed;
 
 	// 動いているか
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Owner Status")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Owner Status")
 		bool ShouldMove;
 
 	// 空中にいる状態かどうか
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Owner Status")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Owner Status")
 		bool IsFall;
 
 	// 何の武器を持っているか
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Owner Status")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Owner Status")
 		EWeaponType WeaponType;
 
 	// キャラクターの状態
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Owner Status")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Owner Status")
 		ECharacterState State;
 };

@@ -121,5 +121,6 @@ private:
 	bool IsReadyToUpdateGame;
 
 	// プレイヤーのコントローラー格納用
-	class ANEOPlayerController* PlayerController;
+	UPROPERTY(VisibleAnywhere)
+		TObjectPtr<class ANEOPlayerController> PlayerController;
 };

@@ -22,9 +22,6 @@ void ACharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// アニメーションインスタンス取得
-	AnimInstance = Cast<UCharacterAnimInstance>(GetMesh()->GetAnimInstance());
-
 	// ゲーム開始時に武器をスポーン
 	SpawnWeapon_BeginPlay();
 }
@@ -71,6 +68,8 @@ void ACharacterBase::HitStop(float _speedDuringHitStop, float _stopTime)
 // 前方後方になにかあるかチェック
 bool ACharacterBase::WallCheck(float _lineLength)
 {
+	if (!this) { return false; }
+
 	// レイキャストを実行する際のパラメータを設定する
 	// レイキャストの開始位置はキャラクターの現在位置
 	float Rotation_Z = GetActorRotation().Yaw;
@@ -326,7 +325,8 @@ TTuple<TArray<AActor*>, TArray<FVector>> ACharacterBase::HitObjToActor(TArray<FH
  */
 void ACharacterBase::SetWeaponType_AnimInstance()
 {
-	// インスタンスが取得できていないときスルー
+	UCharacterAnimInstance* AnimInstance = Cast<UCharacterAnimInstance>(GetMesh()->GetAnimInstance());
+
 	if (!AnimInstance) { return; }
 
 	// AnimationInstanceに武器情報を送る
@@ -377,6 +377,24 @@ void ACharacterBase::SetCollision()
 		break;
 	}
 
+}
+
+
+/*
+ * 関数名　　　　：GetAnimationAsset()
+ * 処理内容　　　：何らかのアニメーションが再生中かどうか
+ * 戻り値　　　　：再生中ならtrue
+ */
+bool ACharacterBase::IsAnimationPlaying()const
+{
+	UCharacterAnimInstance* AnimInstance = Cast<UCharacterAnimInstance>(GetMesh()->GetAnimInstance());
+
+	UAnimMontage* PlayingAnimation = AnimInstance->GetCurrentActiveMontage();
+
+	// インスタンスが見つからなかった場合はfalse
+	bool IsPlaying = (!PlayingAnimation)?(false):(true);
+
+	return IsPlaying;
 }
 
 

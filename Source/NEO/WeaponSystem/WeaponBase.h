@@ -11,7 +11,8 @@ class UBoxComponent;		// -------------------------------
 class UCapsuleComponnet;	// コリジョン作成テンプレート用
 class USphereComponent;		// -------------------------------
 class ACharacter;
-class UNiagaraSystem;
+class UStaticMeshComponent;
+class UNiagaraComponent;
 
 //-----------------武器の種類-------------------------------------
 UENUM(BlueprintType)
@@ -75,8 +76,8 @@ protected:
 	virtual void Tick(float DeltaTime) override;
 
 	// 引数によってスタティックメッシュかスケルタルメッシュのセットアップ
-	void SetupWeaponMesh(UStaticMeshComponent*& MeshComp, TCHAR* WeaponAssetPath, FName PublicName = "WeaponStaticMesh");
-	void SetupWeaponMesh(USkeletalMeshComponent*& MeshComp, TCHAR* WeaponAssetPath, FName PublicName = "WeaponSkeletalMesh");
+	void SetupWeaponMesh(TObjectPtr<UStaticMeshComponent>& MeshComp, TCHAR* WeaponAssetPath, FName PublicName = "WeaponStaticMesh");
+	void SetupWeaponMesh(TObjectPtr<USkeletalMeshComponent>& MeshComp, TCHAR* WeaponAssetPath, FName PublicName = "WeaponSkeletalMesh");
 
 	// ダメージ量設定
 	void SetDamageAmount(int32 _damage) { Damage = _damage; }
@@ -91,31 +92,31 @@ private:
 protected:
 
 	// 武器のメッシュ
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponMesh")
-		class UStaticMeshComponent* WeaponStaticMesh;
+	UPROPERTY(EditAnywhere, Category = "WeaponMesh")
+		TObjectPtr<UStaticMeshComponent> WeaponStaticMesh;
 
 	// 武器のコリジョン
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponCollision")
-		class UCapsuleComponent* WeaponCollision;
-
-	// アクション補助の役割をするコンポーネント
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ActionAssist")
-		class UActionAssistComponent* ActionAssistComp;
+	UPROPERTY(EditAnywhere, Category = "WeaponCollision")
+		TObjectPtr<UCapsuleComponent> WeaponCollision;
 
 	// 武器が落ちているときのエフェクト
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effect")
-		class UNiagaraComponent* AuraEffect;
+	UPROPERTY(EditAnywhere, Category = "Effect")
+		TObjectPtr<UNiagaraComponent> AuraEffect;
+
+	// アクション補助の役割をするコンポーネント
+	UPROPERTY(EditAnywhere, Category = "ActionAssist")
+		TObjectPtr<class UActionAssistComponent> ActionAssistComp;
 
 	// 武器を落とした時の音
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sound")
-		class USoundBase* DropWeaponSoundObj;
+	UPROPERTY(EditAnywhere, Category = "Sound")
+		TObjectPtr<class USoundBase> DropWeaponSoundObj;
 
 	// 武器が落ちる場所
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Drop")
+	UPROPERTY(EditAnywhere, Category = "Drop")
 		FVector DropLocation;
 
 	// 武器が落ちる角度
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Drop")
+	UPROPERTY(EditAnywhere, Category = "Drop")
 		FRotator DropAngle;
 
 	// オーナーの情報
@@ -161,7 +162,7 @@ protected:
 	 * 戻り値　　　　：なし
 	 */
 		template<class T>
-		void SetupCollisionComponent(T*& CollisionComp, FName PublicName = "CollisionComp")
+		void SetupCollisionComponent(TObjectPtr<T>& CollisionComp, FName PublicName = "CollisionComp")
 		{
 			static_assert(std::is_same<T, UBoxComponent>::value || std::is_same<T, USphereComponent>::value || std::is_same<T, UCapsuleComponent>::value,
 				"「T」は UBoxComponent,USphereComponent,UCapsuleComponent のいずれか ");

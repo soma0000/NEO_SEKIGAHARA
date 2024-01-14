@@ -50,7 +50,7 @@ void AEnamyBase::DestoryEnemy()
 	ANEOGameMode* GameMode = Cast<ANEOGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
 	if (GameMode)
 	{
-		GameMode->DestroyEnemy(this, IsAreaEnemy);
+		GameMode->DestroyEnemy(this, GetIsAreaEnemy());
 
 	}
 	
@@ -81,7 +81,7 @@ void AEnamyBase::BeginPlay()
 		}
 	}
 	
-	bGetAway = UKismetMathLibrary::RandomBool();
+	bGetAway = false;
 }
 /*
  * 関数名　　　　：AEnemyBase::GetPlayer
@@ -126,7 +126,7 @@ void AEnamyBase::Tick(float DeltaTime)
 				bIsRotation = CharacterLocation.Y > MyLocation.Y;
 				bIsRotationTag2 = CharacterLocation.X > MyLocation.X;
 				//bIsRotationがtrueなら
-				if (Health >= 0)
+				if (!IsAnimationPlaying())
 				{
 
 					bool LookRight = false;
@@ -239,25 +239,28 @@ void AEnamyBase::TakedDamage(float DamageAmount, bool _bLastAttack)
 	bIsNowDamage = true;
 	GetWorldTimerManager().SetTimer(TimerHandle_ResetDamage, this, &AEnamyBase::DamageReac, 0.2f, false);
 	ActionAssistComp->SpawnEffect(NiagaraEffect, GetActorLocation());
-	ActionAssistComp->HitStop(0.01f,0.1f);
+	HitStop(0.05f,0.1f);
+
 	if (Health <= 0&& bGetAway == false)
 	{
-
 		PlayAnimMontage(Death, 0.8, NAME_None);
-		GetWorldTimerManager().SetTimer(TimerHandle_DestroyEnemy, this, &AEnamyBase::AfterDeath, 1.6f, true);
+
+		GetWorldTimerManager().ClearTimer(TimerHandle_DestroyEnemy);
+		GetWorldTimerManager().SetTimer(TimerHandle_DestroyEnemy, this, &AEnamyBase::AfterDeath, 1.0f, true);
 		bIsDeath = true;
 		FVector ForceDirection = -GetActorForwardVector();
-		float ForceStrength = 1000.0f;  // Adjust this value as needed.
-		Tags.Remove(FName("Enemy"));
+		float ForceStrength = 80000.0f;  // Adjust this value as needed.
 
-		GetCharacterMovement()->AddForce(ForceDirection * ForceStrength);
-		GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-		GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Block);
+		GetCharacterMovement()->AddImpulse(ForceDirection * ForceStrength);
 
 
 	}
 	else
 	{
+		FVector ForceDirection = -GetActorForwardVector();
+		float ForceStrength = 1000.0f;  // Adjust this value as needed.
+		GetCharacterMovement()->AddImpulse(ForceDirection * ForceStrength);
+
 		PlayAnimMontage(Damage_Reaction, 0.8, NAME_None);
 
 

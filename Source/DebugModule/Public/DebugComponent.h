@@ -24,60 +24,60 @@ struct FDebugAction
 public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		UInputMappingContext* DebugKeyMappingContext = nullptr;
+		TObjectPtr<UInputMappingContext> DebugKeyMappingContext = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		UInputAction* Debug_ESC = nullptr;
+		TObjectPtr<UInputAction> Debug_ESC = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		UInputAction* Debug_F1 = nullptr;
+		TObjectPtr<UInputAction> Debug_F1 = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		UInputAction* Debug_F2 = nullptr;
+		TObjectPtr<UInputAction> Debug_F2 = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		UInputAction* Debug_F3 = nullptr;
+		TObjectPtr<UInputAction> Debug_F3 = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		UInputAction* Debug_F4 = nullptr;
+		TObjectPtr<UInputAction> Debug_F4 = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		UInputAction* Debug_F5 = nullptr;
+		TObjectPtr<UInputAction> Debug_F5 = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		UInputAction* Debug_F6 = nullptr;
+		TObjectPtr<UInputAction> Debug_F6 = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		UInputAction* Debug_F7 = nullptr;
+		TObjectPtr<UInputAction> Debug_F7 = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		UInputAction* Debug_F8 = nullptr;
+		TObjectPtr<UInputAction> Debug_F8 = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		UInputAction* Debug_F9 = nullptr;
+		TObjectPtr<UInputAction> Debug_F9 = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		UInputAction* Debug_F10 = nullptr;
+		TObjectPtr<UInputAction> Debug_F10 = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		UInputAction* Debug_F11 = nullptr;
+		TObjectPtr<UInputAction> Debug_F11 = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		UInputAction* Debug_F12 = nullptr;
+		TObjectPtr<UInputAction> Debug_F12 = nullptr;
 };
 //----------------------------------------------------------------------------------------
 
 class IDebugModule : public IModuleInterface
 {
 public:
-	
-	// シングルインスタンスを返す。必要な時にロード
+
+	// 必要に応じてモジュールをロードし、シングルインスタンスを返す
 	static inline IDebugModule& Get()
 	{
 		return FModuleManager::LoadModuleChecked< IDebugModule >("DebugModule");
 	}
-	
-	// Moduleがロードされ、準備ができたか　使用可能ならTrue
+
+	// モジュールがロードされ、使用できる状態ならtrueを返す
 	static inline bool IsAvailable()
 	{
 		return FModuleManager::Get().IsModuleLoaded("DebugModule");

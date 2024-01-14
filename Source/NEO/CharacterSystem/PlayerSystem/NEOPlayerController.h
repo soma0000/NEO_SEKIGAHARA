@@ -56,19 +56,11 @@ private:
 private:
 
 	// プレイヤーがリスポーンできる回数
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
 		int DefaultRemainingLives;
 
-	// プレイヤーの近くに何体敵がいたら強調表示するか
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-		int EnemiesCnt;
-
-	// プレイヤーがリスポーンできる回数
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-		float PlayerToEnemyDistance;
-
 	// リスポーン時の高さ
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
 		float RespownPosHeight;
 
 	// PressAnyからFキーは除く
@@ -81,9 +73,11 @@ private:
 	bool PlayerIsDead;
 
 	// プレイヤーの情報
-	APlayerBase* pPlayer;
+	UPROPERTY()
+		TObjectPtr<APlayerBase> pPlayer;
 
 	// ゲームモード
-	class ANEOGameMode* pGameMode;
+	UPROPERTY()
+		TObjectPtr<class ANEOGameMode> pGameMode;
 };
 
