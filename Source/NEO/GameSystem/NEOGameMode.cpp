@@ -314,6 +314,23 @@ void ANEOGameMode::DestroyEnemy(AActor* _enemy, bool _bBattleAreaEnemy)
 
 
 /*
+ * 関数名　　　　：InGameStart()
+ * 処理内容　　　：インゲームからスタート
+ * 戻り値　　　　：なし
+ */
+void ANEOGameMode::InGameStart()
+{
+	if (!pGameState) { return; }
+
+	pGameState->SetTitleState(ETitleState_NEO::OnDisplay_None);
+	pGameState->SetNextGameState(EGameState_NEO::OnOpening);
+
+	pGameState->SetReadyUpdateGame(true);
+}
+
+
+
+/*
  * 関数名　　　　：RestartGame()
  * 処理内容　　　：ゲームリセット
  * 戻り値　　　　：なし

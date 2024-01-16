@@ -118,7 +118,7 @@ void APlayerBase::SetupDebugEventBindings()
 
 	// ESC		：ゲーム終了
 	// F１		：リスタートゲーム
-	// F２		：
+	// F２		：インゲームからスタート
 	// F３		：ポーズ
 	// F４		：バトルエリア解除
 	// F５		：
@@ -132,6 +132,7 @@ void APlayerBase::SetupDebugEventBindings()
 
 	DebugComponent->DebugInputReceived_ESC.AddDynamic(this, &APlayerBase::QuitGame);
 	DebugComponent->DebugInputReceived_F1.AddDynamic(this, &APlayerBase::RestartGame);
+	DebugComponent->DebugInputReceived_F2.AddDynamic(this, &APlayerBase::StartInGame);
 	DebugComponent->DebugInputReceived_F3.AddDynamic(this, &APlayerBase::SetGamePause);	
 	DebugComponent->DebugInputReceived_F4.AddDynamic(this, &APlayerBase::ExitBattleArea);
 	DebugComponent->DebugInputReceived_F6.AddDynamic(this, &APlayerBase::SetAbsolutelyInvincible);
@@ -255,17 +256,16 @@ void APlayerBase::JumpStart()
 	if (!IsPlayerGrounded()) { return; }
 
 	// 停止中と移動中のみジャンプ可
-	if (State == EPlayerState::Idle || State == EPlayerState::Move)
-	{
-		// ジャンプ時間
-		frames = 0.f;
+	if (State == EPlayerState::Idle || State == EPlayerState::Move) { return; }
 
-		// ジャンプ前の高さ取得
-		JumpBeforePos_Z = GetActorLocation().Z;
+	// ジャンプ時間リセット
+	frames = 0.f;
 
-		// ステートをジャンプ処理へ
-		State = EPlayerState::Jump;
-	}
+	// ジャンプ前の高さ取得
+	JumpBeforePos_Z = GetActorLocation().Z;
+
+	// ステートをジャンプ処理へ
+	State = EPlayerState::Jump;
 }
 
 
@@ -320,21 +320,17 @@ void APlayerBase::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Ot
 	// 攻撃中と被ダメージ中は武器を拾えない状態に
 	if (State == EPlayerState::Attack || State == EPlayerState::Damage || State == EPlayerState::Death) { return; }
 
-	// オーバーラップした際に実行したいイベント
-	if (OtherActor && (OtherActor != this))
+	// 当たったのがプレイヤーの時装備させる
+	if (OtherActor && OtherActor->ActorHasTag("Weapon"))
 	{
-		// 当たったのがプレイヤーの時装備させる
-		if (OtherActor->ActorHasTag("Weapon"))
-		{
-			// 新しい武器の情報取得
-			AWeaponBase* NewWeapon = Cast<AWeaponBase>(OtherActor);
+		// 新しい武器の情報取得
+		AWeaponBase* NewWeapon = Cast<AWeaponBase>(OtherActor);
 
-			// 武器を拾う
-			if (AttachWeapon(NewWeapon, SocketNames[int32(NewWeapon->GetWeaponType())], false))
-			{
-				// 武器を落とすまでの被ダメージ回数リセット
-				DefaultDamageLimit = GetStatus().HP;
-			}
+		// 武器を拾う
+		if (AttachWeapon(NewWeapon, SocketNames[int32(NewWeapon->GetWeaponType())], false))
+		{
+			// 武器を落とすまでの被ダメージ回数リセット
+			DefaultDamageLimit = GetStatus().HP;
 		}
 	}
 }
@@ -753,21 +749,10 @@ void APlayerBase::SlowDownDeathAnimationRate()
 void APlayerBase::CallControllerFunc_DestroyPlayer()
 {
 	// コントローラーからプレイヤーを削除
-	if (PlayerController)
-	{
-		// 残機があるうちはリスポーン
-		if (PlayerController->GetRemainingLives() > 0)
-		{
-			// プレイヤーリスポーン
-			PlayerController->RespawnPlayer();
-		}
-		// それ以外はゲームオーバー
-		else
-		{
-			// プレイヤー削除
-			PlayerController->DestroyPlayer();
-		}
-	}
+	if (!PlayerController) { return; }
+
+	// 残機があるうちはリスポーンそれ以外はゲームオーバー
+	(PlayerController->GetRemainingLives() > 0) ? (PlayerController->RespawnPlayer()) : (PlayerController->DestroyPlayer());
 }
 
 
@@ -967,6 +952,20 @@ void APlayerBase::OnDamage(bool _isLastAttack)
 
 	 // ゲームモードからリスタート処理を呼ぶ
 	 pGameMode->RestartGame();
+ }
+
+
+ /*
+ * 関数名　　　　：StartInGame()
+ * 処理内容　　　：F2:インゲームからスタート
+ * 戻り値　　　　：なし
+ */
+ void APlayerBase::StartInGame()
+ {
+	 if (!pGameMode) { return; }
+
+	 // ゲームモードからインゲーム開始処理を呼ぶ
+	 pGameMode->InGameStart();
  }
 
 

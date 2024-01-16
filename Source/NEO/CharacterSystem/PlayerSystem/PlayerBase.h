@@ -205,6 +205,10 @@ public:
 	UFUNCTION()
 		void RestartGame();
 
+	// F2:インゲームからスタート
+	UFUNCTION()
+		void StartInGame();
+
 	// F3:ゲームポーズ
 	UFUNCTION()
 		void SetGamePause();

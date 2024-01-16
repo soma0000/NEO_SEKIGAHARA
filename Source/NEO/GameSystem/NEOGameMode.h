@@ -86,6 +86,10 @@ public:
 		void DestroyerEvent();
 
 	//--------------デバッグ用-----------------
+	 
+	// インゲームからスタート
+	void InGameStart();
+
 	// ゲームリセット
 	void RestartGame();
 

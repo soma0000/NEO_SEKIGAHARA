@@ -181,35 +181,25 @@ void ACharacterBase::Attack_Gun()
  */
 bool ACharacterBase::AttachWeapon(AWeaponBase* _newWeapon, FName _socketName /*= "None"*/, bool _bDestroy /*= true*/)
 {
-	// 新しい武器が存在するかつソケットが設定されているか
-	if (!_newWeapon || SocketNames.Num() <= 0) { return false; }
+	// ソケットが設定されているかの確認と武器が拾える状態にあるか
+	if (SocketNames.Num() <= 0 || !_newWeapon || _newWeapon->GetIsPickUp()) { return false; }
 
-	// 武器が取得できる状態か確認
-	if (_newWeapon->GetIsPickUp())
-	{
-		// 他の武器を持っているとき
-		if (Weapon)
-		{
-			// 武器を離す
-			DetachWeapon(_bDestroy);
-		}
+	// 他の武器を持っているとき武器を離す
+	if (Weapon){ DetachWeapon(_bDestroy); }
 
-		// 武器を更新
-		Weapon = _newWeapon;
-		WeaponType = Weapon->GetWeaponType();
+	// 武器を更新
+	Weapon = _newWeapon;
+	WeaponType = Weapon->GetWeaponType();
 
-		// AnimationInstanceに武器情報を送る
-		SetWeaponType_AnimInstance();
+	// AnimationInstanceに武器情報を送る
+	SetWeaponType_AnimInstance();
 
-		// 新しくソケットが指定されたら更新する
-		const FName NewSocketName = (_socketName != "None") ? (_socketName) : (SocketNames[0]);
+	// 新しくソケットが指定されたら更新する
+	const FName NewSocketName = (_socketName != "None") ? (_socketName) : (SocketNames[0]);
 
-		Weapon->AttachToCharacter(this, NewSocketName);
+	Weapon->AttachToCharacter(this, NewSocketName);
 
-		return true;
-	}
-
-	return false;
+	return true;
 }
 
 
@@ -222,17 +212,8 @@ void ACharacterBase::DetachWeapon(bool _bDestroy /*= true*/)
 {
 	if (!Weapon) { return; }
 
-	// 削除フラグ
-	if (!_bDestroy)
-	{
-		// 今持っている武器を手放す
-		Weapon->DetachFromCharacter();
-	}
-	else
-	{
-		// 武器を削除
-		Weapon->Destroy();
-	}
+	// 持っている武器を離すか削除する
+	(!_bDestroy) ? (Weapon->DetachFromCharacter()) : (Weapon->Destroy());
 
 	// 武器を持っていない状態へ
 	Weapon = nullptr;
@@ -247,43 +228,37 @@ void ACharacterBase::DetachWeapon(bool _bDestroy /*= true*/)
  * 関数名　　　　：ChangeWeapon()
  * 処理内容　　　：新しい武器を装備する
  * 引数１　　　　：TSubclassOf<AWeaponBase> _newWeaponClass・・・新しい武器のクラス
- * 引数２        ：FName _socketName ・・・・・・・・・・・・・・ソケットの名前
+ * 引数２		：FName _socketName ・・・・・・・・・・・・・・ソケットの名前
  * 引数３　　　　：bool _bDestroy・・・・・・・・・・・・・・・・持ち替える前の武器を削除するかどうか
  * 戻り値　　　　：装備が成功したか
  */
 bool ACharacterBase::ChangeWeapon(TSubclassOf<AWeaponBase> _newWeaponClass, FName _socketName /*= "None"*/, bool _bDestroy /*= true*/)
 {
 	// 新しい武器が設定されているか確認
-	if (_newWeaponClass)
+	if (!_newWeaponClass) { return false; }
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = this;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	// 武器を持っている場合手離す
+	if (Weapon){ Weapon->DetachFromCharacter(); }
+
+	// 装備が成功するかのフラグ
+	bool bSucces = false;
+
+	// プレイヤーにアタッチ
+	if (Weapon = GetWorld()->SpawnActor<AWeaponBase>(_newWeaponClass, SpawnParams))
 	{
-		FActorSpawnParameters SpawnParams;
-		SpawnParams.Owner = this;
-		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		// 武器の種類取得
+		WeaponType = Weapon->GetWeaponType();
 
-		// 武器を持っている場合手離す
-		if (Weapon)
-		{
-			// 今持っている武器を手放す
-			Weapon->DetachFromCharacter();
-		}
+		Weapon->AttachToCharacter(this, _socketName);
 
-		// 新しい武器をSpawn
-		Weapon = GetWorld()->SpawnActor<AWeaponBase>(_newWeaponClass, SpawnParams);
-
-		// プレイヤーにアタッチ
-		if (Weapon)
-		{
-			// 武器の種類取得
-			WeaponType = Weapon->GetWeaponType();
-
-			// くっつける
-			Weapon->AttachToCharacter(this, _socketName);
-
-			return true;
-		}
+		bSucces =  true;
 	}
 
-	return false;
+	return bSucces;
 }
 
 
@@ -357,21 +332,18 @@ void ACharacterBase::SetCollision()
 		{
 			Attack_Sword(HitObjToActor(OutHitResults));
 		}
-
 		break;
 	case EWeaponType::WeaponType_Lance:						// 槍の攻撃
 														
 		// 武器が何かに当たっていたら					
-		if (Weapon->GetHitResults(OutHitResults))		
+		if (Weapon->GetHitResults(OutHitResults))
 		{												
 			Attack_Lance(HitObjToActor(OutHitResults));
 		}
-
 		break;
 	case EWeaponType::WeaponType_Gun:						// 銃の攻撃
 
 		Attack_Gun();										
-
 		break;
 	case EWeaponType::WeaponType_None:
 		break;
