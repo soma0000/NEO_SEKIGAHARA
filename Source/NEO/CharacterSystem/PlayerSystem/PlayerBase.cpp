@@ -256,7 +256,7 @@ void APlayerBase::JumpStart()
 	if (!IsPlayerGrounded()) { return; }
 
 	// 停止中と移動中のみジャンプ可
-	if (State == EPlayerState::Idle || State == EPlayerState::Move) { return; }
+	if (!(State == EPlayerState::Idle || State == EPlayerState::Move)) { return; }
 
 	// ジャンプ時間リセット
 	frames = 0.f;
@@ -321,8 +321,10 @@ void APlayerBase::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Ot
 	if (State == EPlayerState::Attack || State == EPlayerState::Damage || State == EPlayerState::Death) { return; }
 
 	// 当たったのがプレイヤーの時装備させる
-	if (OtherActor && OtherActor->ActorHasTag("Weapon"))
+	if (OtherActor && OtherActor != this)
 	{
+		if (!OtherActor->ActorHasTag("Weapon")) { return; }
+
 		// 新しい武器の情報取得
 		AWeaponBase* NewWeapon = Cast<AWeaponBase>(OtherActor);
 

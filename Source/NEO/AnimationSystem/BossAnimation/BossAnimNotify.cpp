@@ -46,5 +46,4 @@ void UBossAnimNotify::Notify(USkeletalMeshComponent* _MeshComp, UAnimSequenceBas
 	{
 		aOda->UltSpawnFlagChange(UltInfo);
 	}
-
 }

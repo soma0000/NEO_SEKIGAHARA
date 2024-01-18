@@ -14,7 +14,7 @@ enum class EBossNotifyType :uint8
 	NotifyType_BossAttacked				UMETA(DisplayName = "BossAttacked"),
 	NotifyType_BossDeath				UMETA(DisplayName = "BossDeath"),
 	NotifyType_BossHPLock				UMETA(DisplayName = "BossHPLock"),
-	NotifyType_BossUlt					UMETA(DisplayName = "BossUlt")
+	NotifyType_BossUlt					UMETA(DisplayName = "BossUlt"),
 
 };
 

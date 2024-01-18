@@ -181,11 +181,18 @@ void ACharacterBase::Attack_Gun()
  */
 bool ACharacterBase::AttachWeapon(AWeaponBase* _newWeapon, FName _socketName /*= "None"*/, bool _bDestroy /*= true*/)
 {
-	// ソケットが設定されているかの確認と武器が拾える状態にあるか
-	if (SocketNames.Num() <= 0 || !_newWeapon || _newWeapon->GetIsPickUp()) { return false; }
+	// 新しい武器が存在するかつソケットが設定されているか
+	if (!_newWeapon || SocketNames.Num() <= 0) { return false; }
 
-	// 他の武器を持っているとき武器を離す
-	if (Weapon){ DetachWeapon(_bDestroy); }
+	// 武器が取得できる状態か確認
+	if (!(_newWeapon->GetIsPickUp())) { return false; }
+
+	// 他の武器を持っているとき
+	if (Weapon)
+	{
+		// 武器を離す
+		DetachWeapon(_bDestroy);
+	}
 
 	// 武器を更新
 	Weapon = _newWeapon;

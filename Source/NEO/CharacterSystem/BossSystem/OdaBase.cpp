@@ -63,7 +63,7 @@ void AOdaBase::BeginPlay()
 	iAnimTime.Attack2 = ((int)AnimMontage_BossAttack2->GetPlayLength() + 1) * 60.f;
 	iAnimTime.Ultimate = ((int)AnimMontage_BossUltimate->GetPlayLength() + 1) * 60.f;
 	iAnimTime.BlowAway = (int)AnimMontage_BossBlowAway->GetPlayLength() * 60.f;
-	iAnimTime.Death = (int)AnimMontage_BossDeath->GetPlayLength() * 60.f;
+	iAnimTime.Death = ((int)AnimMontage_BossDeath->GetPlayLength()-0.25);
 	iAnimTime.StartMovie = (int)AnimMontage_BossStartMovie->GetPlayLength() * 60.f;
 
 
@@ -878,10 +878,11 @@ void AOdaBase::TakedDamage(float Damage , bool _bLastAttacked)
 		//HPが0になったら
 		if (Health <= 0.f)
 		{
-			//動けるかどうかの変数をfalseにしておく
+			
+			//フラグを使ってダメージを受けるアニメーションを動かさないようにする
 			if (isMove == true)
 			{
-				//フラグを使ってダメージを受けるアニメーションを動かさないようにする
+				//動けるかどうかの変数をfalseにしておく
 				isMove = false;
 				//一応アニメーションを止めておく
 				this->StopAnimMontage();
@@ -891,10 +892,6 @@ void AOdaBase::TakedDamage(float Damage , bool _bLastAttacked)
 
 				//アニメーションを流す
 				AnimationPlay(AnimMontage_BossDeath, &isMotionPlaying.isDeathPlay);
-
-				//アニメーションの長さを判定してその時間が過ぎたら死亡処理の関数に飛ばせる処理
-				FTimerManager& TimerManager2 = GetWorld()->GetTimerManager();
-				TimerManager2.SetTimer(TimerHandle_DeathToGameOver, this, &AOdaBase::Death, iAnimTime.Death, false);
 			}
 		}
 		for (int i = 0; i < Enemy.Num(); i++)
@@ -939,6 +936,9 @@ void AOdaBase::WorldTimeReturn()
 	}
 	//時間を戻す
 	UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 1.f);
+	//アニメーションの長さを判定してその時間が過ぎたら死亡処理の関数に飛ばせる処理
+	FTimerManager& TimerManager2 = GetWorld()->GetTimerManager();
+	TimerManager2.SetTimer(TimerHandle_DeathToGameOver, this, &AOdaBase::Death, iAnimTime.Death, false);
 }
 
 /*
@@ -1158,6 +1158,8 @@ void AOdaBase::Death()
 		}
 	}
 }
+
+
 
 // 攻撃が当たった時の処理
 void AOdaBase::Attack_Sword(TTuple<TArray<AActor*>, TArray<FVector>> HitActorAndLocation)
