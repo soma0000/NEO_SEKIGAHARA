@@ -68,6 +68,8 @@ Sword.cpp
 Sword.h
 WeaponBase.cpp
 WeaponBase.h
+☆WeaponComponent.cpp
+☆WeaponComponent.h
 
 担当箇所は以上となります。
 -------------------------------------------------------------------------------------
