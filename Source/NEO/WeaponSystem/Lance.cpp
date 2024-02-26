@@ -23,7 +23,7 @@ ALance::ALance()
 	SetupCollisionComponent(WeaponCollision);
 
 	// •Ší‚Ìí—Ş‚ğ‘„‚Éİ’è
-	WeaponType = EWeaponType::WeaponType_Lance;
+	WeaponType = EWeaponType::Lance;
 }
 
 // Called when the game starts or when spawned

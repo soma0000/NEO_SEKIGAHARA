@@ -23,7 +23,7 @@ public:
 
 	//アニメーション
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
-		UAnimMontage* Attack;
+		UAnimMontage* Attack1;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
 		UAnimMontage* Attack2;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
@@ -74,10 +74,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Health")
 		virtual void TakedDamage(float DamageAmount, bool _bLastAttack = false);
 
-	//---------------------------------------------------------------------------------------------------------- -
-	void Attack_Sword(TTuple<TArray<AActor*>, TArray<FVector>> HitActorAndLocation);	// 刀の処理
-	void Attack_Lance(TTuple<TArray<AActor*>, TArray<FVector>> HitActorAndLocation);	// 槍の処理	
-	//-----------------------------------------------------------------------------------------------------------
+	void Attack();
 
 	void MaintainDistanceFromEnemy();
 	 
@@ -142,4 +139,7 @@ public:
 	
 	UFUNCTION()
     void OnOverlapBeginWall(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UPROPERTY(EditAnywhere, Category = "WeaponComp", meta = (AllowPrivateAccess = "true"))
+		class UWeaponComponent* WeaponComp;
 };

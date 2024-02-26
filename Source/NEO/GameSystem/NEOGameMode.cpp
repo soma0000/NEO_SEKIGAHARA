@@ -16,6 +16,7 @@
 ANEOGameMode::ANEOGameMode()
 	: bIsOnBattleArea(false)
 {
+	PrimaryActorTick.bCanEverTick = false;
 
 }
 
@@ -35,18 +36,6 @@ void ANEOGameMode::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-
-	// ゲームの状態を更新
-	if (pGameState) 
-	{
-		// ゲームの状態更新
-		pGameState->UpdateGameState(DeltaTime);
-	}
-	else 
-	{
-		UE_LOG(LogTemp, Error, TEXT("Game State is not found"));
-		pGameState = Cast<ANEOGameState>(UGameplayStatics::GetGameState(GetWorld()));
-	}
 }
 
 // カメラの初期設定
@@ -322,9 +311,7 @@ void ANEOGameMode::InGameStart()
 {
 	if (!pGameState) { return; }
 
-	pGameState->SetTitleState(ETitleState_NEO::OnDisplay_None);
 	pGameState->SetNextGameState(EGameState_NEO::OnOpening);
-
 	pGameState->SetReadyUpdateGame(true);
 }
 
@@ -337,6 +324,10 @@ void ANEOGameMode::InGameStart()
  */
 void ANEOGameMode::RestartGame()
 {
+	if (!pGameState) { return; }
+
+	pGameState->SetNextGameState(EGameState_NEO::OnNitiden);
+
 	UGameplayStatics::OpenLevel(GetWorld(),"GameMap");
 }
 

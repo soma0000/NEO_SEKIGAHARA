@@ -65,11 +65,8 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	// 攻撃の当たり判定を発生させる
-	void SetCollision();
-
-	// 持っている武器の種類取得
-	EWeaponType GetWeaponType()const { return WeaponType; }
+	// 攻撃処理
+	virtual void Attack() { return; }
 
 	// 被ダメージ処理
 	virtual void TakedDamage(float _damge, bool _bLastAttack = false) { return; }
@@ -85,38 +82,16 @@ protected:
 
 	// ジャンプ処理
 	virtual void Jump() { return; }
-
-	// 攻撃が当たった時の処理
-	virtual void Attack_Sword(TTuple<TArray<AActor*>,TArray<FVector>> HitActorAndLocation) { return; }	// 刀の処理
-	virtual void Attack_Lance(TTuple<TArray<AActor*>,TArray<FVector>> HitActorAndLocation) { return; }	// 槍の処理	
-	virtual void Attack_Gun();																			// 銃の処理
-
-	// 武器を取得
-	bool AttachWeapon(AWeaponBase* _newWeapon, FName _socketName = "None", bool _bDestroy = true);
-
-	// 武器を離す
-	void DetachWeapon(bool _bDestroy = true);
-
-	// 武器を持ち替える
-	bool ChangeWeapon(TSubclassOf<AWeaponBase> _newWeaponClass, FName _socketName = "None",bool _bDestroy = true);
+	virtual void Jump(float _deltaTime) { return; }
 
 	// ヒットストップ処理
 	void HitStop(float _speedDuringHitStop, float _stopTime);
-
-	// 武器取得
-	AWeaponBase* GetWeapon()const { return Weapon; }
 
 	// ステータス設定
 	void InitStatus(int32 _hp, float _moveSpeed, float _jumpHeight, float _comboDamageFactor);
 
 	// ステータス取得
 	FCharacterStatus GetStatus()const { return Status; }
-
-	// 武器の攻撃力取得
-	int32 GetWeaponDamage()const { return Weapon->GetDamage(); }
-
-	// ゲーム開始時に武器をスポーン
-	void SpawnWeapon_BeginPlay();
 
 	// 何らかのアニメーションが再生中かどうか
 	bool IsAnimationPlaying()const;
@@ -126,14 +101,8 @@ protected:
 
 private:
 
-	// 当たったオブジェクトをActorに変換してヒットした位置も返す
-	TTuple<TArray<AActor*>,TArray<FVector>> HitObjToActor(TArray<FHitResult> _hitResults);
-
 	// ヒットストップ終了処理
 	void EndHitStop();
-
-	// アニメーションインスタンスに武器情報をセット
-	void SetWeaponType_AnimInstance();
 
 protected:
 
@@ -145,30 +114,11 @@ protected:
 
 	//--------------------------------------------------------------------------
 
-	// 武器の指定
-	UPROPERTY(EditAnywhere, Category = "Weapon")
-		TSubclassOf<AWeaponBase> WeaponClass;
-
-	// 武器のソケットの名前
-	UPROPERTY(EditAnywhere, Category = "Weapon")
-		TArray<FName> SocketNames;
-
 private:
-
-	// ゲーム開始時に武器を持たせるかどうか
-	UPROPERTY(EditAnywhere, Category = "Weapon", meta = (AllowPrivateAccess = "true"))
-		bool bIsSpawnWeapon_BeginPlay;
 
 	// キャラクターの基本ステータス
 	UPROPERTY(EditAnywhere, Category = "Status", meta = (AllowPrivateAccess = "true"))
 		FCharacterStatus Status;
-
-	// 武器クラスのポインタ
-	UPROPERTY(VisibleAnywhere)
-		TObjectPtr<AWeaponBase> Weapon;
-
-	// 現在所持している武器を判別するEnum
-	EWeaponType WeaponType;
 
 	// タイマーハンドル
 	FTimerHandle TimerHandle_HitStop;

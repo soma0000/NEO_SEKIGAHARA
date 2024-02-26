@@ -23,7 +23,7 @@ void UBossAnimNotifyState::NotifyTickAction(AActor* _Owner, UAnimSequenceBase* A
 		//BossGet
 		AOdaBase* Oda = Cast<AOdaBase>(_Owner);
 		if (Oda) {
-			Oda->SetCollision();
+			Oda->Attack();
 		}
 	}
 }

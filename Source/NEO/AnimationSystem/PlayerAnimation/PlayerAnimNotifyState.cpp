@@ -34,21 +34,6 @@ void UPlayerAnimNotifyState::NotifyBeginAction(AActor* _Owner, UAnimSequenceBase
 void UPlayerAnimNotifyState::NotifyTickAction(AActor* _Owner, UAnimSequenceBase* Animation, float FrameDeltaTime)
 {
     // アニメーションでの移動開始
-    switch (NotifyType)
-    {
-    case EPlayerNotifyStateType::NotifyType_RootMotion_Attack1:
-        RootMotion(_Owner, 2.f);
-        break;
-    case EPlayerNotifyStateType::NotifyType_RootMotion_Attack2:
-        RootMotion(_Owner, 5.f);
-        break;
-    case EPlayerNotifyStateType::NotifyType_RootMotion_Attack3:
-        RootMotion(_Owner, 8.f);
-        break;
-    case EPlayerNotifyStateType::NotifyType_RootMotion_KnockBack:
-        RootMotion(_Owner, -5.f);
-        break;
-    }
 }
 
 

@@ -3,15 +3,12 @@
 
 #include "SplineCamera.h"
 #include "GameFramework/SpringArmComponent.h"
-#include "GameFramework/PlayerController.h"
 #include "Components/SplineComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Math/UnrealMathUtility.h"
-#include "NEO/CharacterSystem/PlayerSystem/PlayerCharacter.h"
-#include "DrawDebugHelpers.h"
-#include "Components/BoxComponent.h"							//ボックスコンポーネントを使うため
 #include "NEO/GameSystem/NEOGameMode.h"
+#include "NEO/CharacterSystem/PlayerSystem/NEOPlayerController.h"
 
 
 // Sets default values
@@ -28,11 +25,6 @@ ASplineCamera::ASplineCamera()
 	//CreateSplineComponent
 	SplineComponent = CreateDefaultSubobject<USplineComponent>(TEXT("SplineComponent"));
 
-	//Box
-	BoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxComponent"));
-	BoxComponent->SetupAttachment(CameraComponent);
-
-	bMoveFlag = false;
 	CameraSpeed = 300.0f;
 	CurrentRatio = 0;
 
@@ -42,18 +34,15 @@ ASplineCamera::ASplineCamera()
 void ASplineCamera::SetPlayerCamera()
 {
 	//SetViewTarget
-	pGameMode = Cast<ANEOGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
+	ANEOGameMode* pGameMode = Cast<ANEOGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
 	if (pGameMode)
 	{
 		pGameMode->SetPlayerCamera(this);
 		pGameMode->SetViewTargetWithBlend(this);
 	}
 
-	ACharacter* PlayerCharacter = UGameplayStatics::GetPlayerCharacter(this, 0);
-	//SetOwner
-	if (PlayerCharacter) {
-		PlayerCharacter->SetOwner(this);
-	}
+	// プレイヤーコントローラーを取得
+	PlayerController = Cast<ANEOPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
 }
 
 // Called when the game starts or when spawned
@@ -66,8 +55,6 @@ void ASplineCamera::BeginPlay()
 
 		CameraComponent->SetWorldLocation(CameraLocation);
 	}
-
-	
 }
 
 // Called every frame
@@ -75,50 +62,23 @@ void ASplineCamera::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-
-	//if (bMoveFlag != true) return;
-
 	SetCamera();
-
 }
 
 
 void ASplineCamera::SetCamera()
 {
-	// プレイヤーを取得
-	APlayerBase* PlayerCharacter = Cast<APlayerBase>(UGameplayStatics::GetPlayerCharacter(this, 0));
-	if (PlayerCharacter && SplineComponent)
+	if (PlayerController && SplineComponent)
 	{
-		//if (PlayerCharacter->GetPlayerMoveRight() != true) { return; }
-
-		// プレイヤーの位置を取得
-		FVector PlayerLocation = PlayerCharacter->GetActorLocation();
-
 		// Spline曲線上でプレイヤーに最も近い点を取得
-		FVector NearestPoint = SplineComponent->FindLocationClosestToWorldLocation(PlayerLocation, ESplineCoordinateSpace::World);
+		FVector NearestPoint = SplineComponent->FindLocationClosestToWorldLocation(PlayerController->GetPlayerLocation(), ESplineCoordinateSpace::World);
 
-
-		UE_LOG(LogTemp, Log, TEXT("location: %s"), *NearestPoint.ToString());
-
-		//FVector CameraLocation = NearestPoint;	// プレイヤーとカメラの距離を取得
 
 		FVector BeforeCameraLocation = CameraComponent->GetComponentLocation();		//カメラの座標を取得
 
-		// カメラの座標をSpline曲線上でプレイヤーに最も近い点に滑らかに移動させる
-		//FVector CameraLocation = FMath::VInterpTo(BeforeCameraLocation,NearestPoint,DeltaTime, CameraSpeed);	
-
 		FVector CameraLocation = FMath::Lerp(BeforeCameraLocation, NearestPoint, 0.08);
 
-
-
-		//DrawDebugPoint(GetWorld(), BeforeCameraLocation, 100, FColor(52, 220, 239), false);
-
-
-
 		CameraComponent->SetWorldLocation(CameraLocation);
-
-		// プレイヤーの方向を向く
-		//FRotator NewRotation = (PlayerLocation - CameraLocation).Rotation();
 
 		//Spline曲線上でプレイヤーに最も近い点の回転を取得
 		FRotator NewRotation = SplineComponent->FindRotationClosestToWorldLocation(CameraLocation, ESplineCoordinateSpace::World);

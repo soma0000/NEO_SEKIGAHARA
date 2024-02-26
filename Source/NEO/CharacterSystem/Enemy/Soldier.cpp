@@ -6,7 +6,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "GameFramework/Controller.h"
 #include "Kismet/GameplayStatics.h"
-#include "NEO/WeaponSystem/WeaponBase.h"
+#include "NEO/WeaponSystem/WeaponComponent.h"
 
 ASoldier::ASoldier()
 {
@@ -41,7 +41,7 @@ void ASoldier::AttackCombo()
     ComboCounter++;
     if (ComboCounter == 1)
     {
-        PlayAnimMontage(Attack, 1, NAME_None);
+        PlayAnimMontage(Attack1, 1, NAME_None);
         Damage = 5.f;
     }
     else if (ComboCounter == 2)
@@ -83,9 +83,9 @@ void ASoldier::ResetCombo()
  */
 void ASoldier::CollisionOn()
 {
-    if (GetWeapon())
+    if (WeaponComp->GetWeapon())
     {
-        SetCollision();
+        Attack();
     }
 }
 /*
@@ -137,9 +137,9 @@ void ASoldier::Tick(float DeltaTime)
     SetActorLocation(GetActorLocation() + MoveVector);
     if (Health <= 0)
     {
-        if (GetWeapon())
+        if (WeaponComp->GetWeapon())
         {
-            DetachWeapon(false);
+            WeaponComp->DetachWeapon(false);
         }
     }
 }

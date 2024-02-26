@@ -26,7 +26,7 @@ AGun::AGun()
 	SetupCollisionComponent(WeaponCollision);
 
 	// •Ší‚ÌŽí—Þ‚ðe‚ÉÝ’è
-	WeaponType = EWeaponType::WeaponType_Gun;
+	WeaponType = EWeaponType::Gun;
 }
 
 // Called when the game starts or when spawned
@@ -70,11 +70,7 @@ void AGun::Shoot(int32 _damageAmount /*= 0*/)
 	int32 DamageAmount = (_damageAmount != 0) ? (_damageAmount) : (GetDamage());
 
 	// UŒ‚—ÍÝ’è
-	Bullet->SetDamageAmount(DamageAmount);
+	if (Bullet) { Bullet->SetDamageAmount(DamageAmount); }
 
-	if (ShootSoundObj)
-	{
-		// ”­ŽË‰¹Ä¶
-		ActionAssistComp->PlaySound(ShootSoundObj);
-	}
+	if (ShootSoundObj) { ActionAssistComp->PlaySound(ShootSoundObj);}
 }

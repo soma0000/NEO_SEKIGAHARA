@@ -8,6 +8,7 @@
 #include "PlayerBase.generated.h"
 
 class AWeaponBase;
+class UWeaponComponent;
 class UCameraShakeBase;
 class UDebugComponent;
 class ANEOGameMode;
@@ -127,19 +128,18 @@ protected:
 	// 停止
 	void Stop();
 
-
 	// ジャンプ
 	virtual void JumpStart();
-	virtual void Jump();
+	virtual void Jump(float _deltaTime);
 
 	// コンボ攻撃
 	virtual void ComboAttack(int _attackNum = 0);
 
 	// 一つ目のコンボ
-	virtual void Attack1();
+	virtual void AttackStart1();
 
 	// 二つ目のコンボ
-	virtual void Attack2();
+	virtual void AttackStart2();
 
 	// 武器種によって攻撃処理
 	void Attack_Sword(TTuple<TArray<AActor*>, TArray<FVector>> HitActorAndLocation);		// 刀
@@ -160,6 +160,10 @@ protected:
 public:
 
 	//-----------------他クラスで呼び出し可--------------------------------------------------------------------------------------------
+
+	// 攻撃処理
+	void Attack();
+
 	// コンボ継続
 	void ContinuationCombo();
 
@@ -180,7 +184,7 @@ public:
 
 	// ダメージ量を返す関数
 	UFUNCTION(BlueprintCallable, Category = "Action")
-		float GetDamageAmount()const { return GetWeaponDamage() * (((float)ComboIndex + 1.f) * GetStatus().ComboDamageFactor); }
+		float GetDamageAmount()const;
 
 	// ダメージを受ける処理
 	UFUNCTION(BlueprintCallable, Category = "Action")
@@ -300,8 +304,12 @@ protected:
 	//-----------------コンポーネント変数--------------------------------------------------------------------------
 	
 	// デバッグキー設定
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Debug")
+	UPROPERTY(EditAnywhere,Category = "Debug")
 		TObjectPtr<UDebugComponent> DebugComponent;
+
+	// デバッグキー設定
+	UPROPERTY(EditAnywhere,Category = "Weapon")
+		TObjectPtr<UWeaponComponent> WeaponComponent;
 
 	//-------------------------------------------------------------------------------------------------------------
 

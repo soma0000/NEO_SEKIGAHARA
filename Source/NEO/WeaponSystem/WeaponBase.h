@@ -18,10 +18,10 @@ class UNiagaraComponent;
 UENUM(BlueprintType)
 enum class EWeaponType :uint8
 {
-	WeaponType_Sword   UMETA(DisplayName = "Sword"),
-	WeaponType_Lance   UMETA(DisplayName = "Lance"),
-	WeaponType_Gun     UMETA(DisplayName = "Gun"),
-	WeaponType_None	   UMETA(DisplayName = "None")
+	Sword   UMETA(DisplayName = "Sword"),
+	Lance   UMETA(DisplayName = "Lance"),
+	Gun     UMETA(DisplayName = "Gun"),
+	None	   UMETA(DisplayName = "None")
 };
 //----------------------------------------------------------------
 
@@ -86,8 +86,19 @@ protected:
 private:
 
 	// オーナーがいなくなったとき武器が落ちる
-	void BlowsAway();
+	void BlowsAway(float DeltaTime);
 
+	// 着地判定
+	bool IsLanding();
+
+	// 着地処理
+	void HandleLanding();
+
+	// 着地時に位置を補正
+	void AdjustLandingPosition();
+
+	// 着地時に角度を補正
+	void AdjustLandingAngle();
 
 protected:
 
@@ -111,14 +122,6 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Sound")
 		TObjectPtr<class USoundBase> DropWeaponSoundObj;
 
-	// 武器が落ちる場所
-	UPROPERTY(EditAnywhere, Category = "Drop")
-		FVector DropLocation;
-
-	// 武器が落ちる角度
-	UPROPERTY(EditAnywhere, Category = "Drop")
-		FRotator DropAngle;
-
 	// オーナーの情報
 	ACharacter* pOwner;
 
@@ -130,22 +133,30 @@ private:
 	// 武器のステート
 	EWeaponState WeaponState;
 
-	// フレームカウント用
-	float Frames;
-
 	// 攻撃力
 	UPROPERTY(EditAnywhere,Category = "Status",meta = (AllowPrivateAcces = "true"))
 		int32 Damage;
 
-	// ジャンプの高さ
-	UPROPERTY(EditAnywhere, Category = "Status", meta = (AllowPrivateAcces = "true"))
-		float JumpHeight;
+	// 武器が落ちる角度
+	UPROPERTY(EditAnywhere, Category = "Drop", meta = (AllowPrivateAcces = "true"))
+		TArray<double> CorrectDropAngles;
 
-	// ジャンプの計算
-	const float RadPerFrame = 3.14f / 30.f;
+	// 初速度
+	UPROPERTY(EditAnywhere, Category = "Drop", meta = (AllowPrivateAcces = "true"))
+		float InitialVelocity;
 
-	// 飛ぶ前の位置
-	FVector FlyBeforePos;
+	// 武器の着地判定する距離
+	UPROPERTY(EditAnywhere, Category = "Drop", meta = (AllowPrivateAcces = "true"))
+		float RayLength;
+
+	// 前の高さ
+	float PreviousHeight;
+
+	// フレームカウント用
+	float Frames;
+
+	// 重力
+	float Gravity = 9.8f;
 
 	// ハンドル
 	FTimerHandle TimerHandle;

@@ -40,15 +40,15 @@ AOdaBase::AOdaBase() :
 	SwordAddDamage(5),
 	EnemyOneTimeSpawn(0),
 	bIsAttacked(false),
-	Health(1000.f),
-	MaxHealth(1000.f)
+	Health(1500.f),
+	MaxHealth(1500.f)
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	// Assist Create
 	ActionAssistComp = CreateDefaultSubobject<UActionAssistComponent>(TEXT("ActionAssist"));
-
+	WeaponComp = CreateDefaultSubobject<UWeaponComponent>(TEXT("Weapon"));
 }
 
 // Called when the game starts or when spawned
@@ -57,14 +57,14 @@ void AOdaBase::BeginPlay()
 	Super::BeginPlay();
 	SpawnDefaultController();
 
-	//モーションの長さを取る(*60は秒からフレームに変換するため)
-	iAnimTime.BossKnock = (int)AnimMontage_BossKnockMontage->GetPlayLength() * 60.f;
-	iAnimTime.Attack1 = (int)AnimMontage_BossAttack1->GetPlayLength() * 60.f;
-	iAnimTime.Attack2 = ((int)AnimMontage_BossAttack2->GetPlayLength() + 1) * 60.f;
-	iAnimTime.Ultimate = ((int)AnimMontage_BossUltimate->GetPlayLength() + 1) * 60.f;
-	iAnimTime.BlowAway = (int)AnimMontage_BossBlowAway->GetPlayLength() * 60.f;
-	iAnimTime.Death = ((int)AnimMontage_BossDeath->GetPlayLength()-0.25);
-	iAnimTime.StartMovie = (int)AnimMontage_BossStartMovie->GetPlayLength() * 60.f;
+	//モーションの長さを取る(*60は秒からフレームに変換するため)//30or60
+	iAnimTime.BossKnock = (int)AnimMontage_BossKnockMontage->GetPlayLength() * 120.f * (120.f / GetFps());
+	iAnimTime.Attack1 = (int)(AnimMontage_BossAttack1->GetPlayLength() + 0.25) * 120.f * (120.f / GetFps());
+	iAnimTime.Attack2 = ((int)AnimMontage_BossAttack2->GetPlayLength() + 1) * 120.f * (120.f / GetFps());
+	iAnimTime.Ultimate = ((int)AnimMontage_BossUltimate->GetPlayLength() + 2) * 120.f * (120.f / GetFps());
+	iAnimTime.BlowAway = (int)AnimMontage_BossBlowAway->GetPlayLength() * 120.f * (120.f / GetFps());
+	iAnimTime.Death = (int)(AnimMontage_BossDeath->GetPlayLength()-0.25);
+	iAnimTime.StartMovie = (int)AnimMontage_BossStartMovie->GetPlayLength() * 120.f * (120.f / GetFps());
 
 
 	//変数の初期化
@@ -111,7 +111,9 @@ void AOdaBase::Tick(float DeltaTime)
 			return;
 		}
 		//向きをプレイヤーの方に向ける(30フレーム毎に更新)
-		if (FlameCounter % 30 == 0 )
+		//if (FlameCounter % 15 == 0 )
+		//if (FlameCounter % 60 == 0 )
+		if (FlameCounter % 60 * (120.f / GetFps()) == 0)
 		{
 			//プレイヤーの方を向く
 			ToPlayerRotate();
@@ -139,7 +141,8 @@ void AOdaBase::Tick(float DeltaTime)
 		{
 			//二回目を撃つためのタイマーを起動
 			UltTimer++;
-			if (UltTimer % 600 == 0)//600フレーム後に必殺を撃てるようにする
+			if (UltTimer % 1200 * (120.f / GetFps()) == 0)
+			//if (UltTimer % 300 == 0)//600フレーム後に必殺を撃てるようにする
 			{
 				//必殺技を撃てるようにする
 				isUltShot = false;
@@ -153,22 +156,6 @@ void AOdaBase::Tick(float DeltaTime)
 			//待機,動き
 		case ECPPOdaEnum::Stay1:
 			OdaStay1(TimeCounter);
-			break;
-
-			//待機,動き
-		case ECPPOdaEnum::Stop:
-
-			if (FlameCounter > 30)
-			{
-				if (HoldOdaMoveEnum == ECPPOdaEnum::Attack1)
-				{
-					OdaMoveEnum = ECPPOdaEnum::Attack1;
-				}
-				else
-				{
-					OdaMoveEnum = ECPPOdaEnum::Stay1;
-				}
-			}
 			break;
 
 		case ECPPOdaEnum::Movie:
@@ -187,7 +174,8 @@ void AOdaBase::Tick(float DeltaTime)
 				BossMoveY(-OdaSpeed.Dash);
 			}
 			//一定時間たったら
-			if (TimeCounter % 15 == 0)
+			if (TimeCounter % (int)(60 / (120.f / GetFps())) == 0)
+			//if (TimeCounter % 15 == 0)
 			{
 				//待機に戻す
 				BacktoStayCase();
@@ -206,7 +194,8 @@ void AOdaBase::Tick(float DeltaTime)
 				BossMoveY(-OdaSpeed.Back);
 			}
 			//一定時間たったら
-			if (TimeCounter % 30 == 0)
+			if (TimeCounter % (int)(60.f / (120.f / GetFps())) == 0)
+			//if (TimeCounter % 15 == 0)
 			{
 				//待機に戻す
 				BacktoStayCase();
@@ -243,74 +232,11 @@ void AOdaBase::Tick(float DeltaTime)
 		}
 	}
 }
-///*
-// * 関数名　　　　：NomalMode()
-// * 処理内容　　　：通常攻撃用関数
-// * 戻り値　　　　：なし
-// */
-//void AOdaBase::NomalMode()
-//{
-//	//状態ごとに動きを切り替える
-//	switch (OdaMoveEnum)
-//	{
-//		//待機,動き
-//	case ECPPOdaEnum::Stay1:
-//		OdaStay1(TimeCounter);
-//		break;
-//
-//		//待機,動き
-//	case ECPPOdaEnum::Stop:
-//
-//		if (FlameCounter > 30)
-//		{
-//			if (HoldOdaMoveEnum == ECPPOdaEnum::Attack1)
-//			{
-//				OdaMoveEnum = ECPPOdaEnum::Attack1;
-//			}
-//			else
-//			{
-//				OdaMoveEnum = ECPPOdaEnum::Stay1;
-//			}
-//		}
-//		break;
-//
-//		//攻撃１
-//	case ECPPOdaEnum::Attack1:
-//		if (TimeCounter % Attack1WaitingTime == 0)
-//		{
-//			OdaAttack1(TimeCounter);
-//		}
-//		break;
-//
-//		//攻撃２
-//	case ECPPOdaEnum::Attack2:
-//		OdaAttack2(TimeCounter);
-//
-//		break;
-//
-//	}
-//}
-//
-///*
-// * 関数名　　　　：UltMode()
-// * 処理内容　　　：必殺技用関数
-// * 戻り値　　　　：なし
-// */
-//void AOdaBase::UltMode()
-//{
-//	//体力が半分以下になったら
-//	if (Health < MaxHealth / 2.f)
-//	{
-//		//二回目を撃つためのタイマーを起動
-//		UltTimer++;
-//		if (UltTimer % 600 == 0)//600フレーム後に必殺を撃てるようにする
-//		{
-//			//必殺技を撃てるようにする
-//			isUltShot = false;
-//		}
-//	}
-//}
-
+float AOdaBase::GetFps()
+{
+	extern ENGINE_API float GAverageFPS;
+	return GAverageFPS;
+}
 
 /*
  * 関数名　　　　：ToPlayerRotate()
@@ -410,7 +336,7 @@ void AOdaBase::OdaStay1(int Timer)
 			//もし攻撃のディレイの値が入っていなかったら
 			if (Attack1Delay != 0)
 			{
-				Attack1Delay = 10;
+				Attack1Delay = 2;
 			}
 
 			//random固定のリセット
@@ -435,7 +361,7 @@ void AOdaBase::OdaStay1(int Timer)
 		{
 			//軸を合わせに行く
 			OdaMove1(Timer, 60);
-			Attack1Delay = 15;
+			Attack1Delay = 2;
 		}
 		//-----------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -453,6 +379,44 @@ void AOdaBase::OdaStay1(int Timer)
 		}
 
 	}
+}
+
+/*
+ * 関数名　　　　：FinishAnimation()
+ * 処理内容　　　：アニメーションが終了した時の共通処理
+ * 戻り値　　　　：なし
+ */
+void AOdaBase::FinishAnimation()
+{
+	//振り向けるようにする
+	isNowAttacking = false;
+	//リセット
+	NotAttackCount = 0;
+	//ノックバック中に攻撃モーションに入るとHPロックが作動し続けてしまうのでここで切り替える
+	if (isHPLock == true)
+	{
+		HPLock();
+	}
+
+
+
+	if (OdaMoveEnum == ECPPOdaEnum::Attack1)
+	{
+		isDamageHit = false;
+		//ステートを切り替える
+		BacktoStayCase();
+	}
+
+	if (OdaMoveEnum == ECPPOdaEnum::Attack2 || OdaMoveEnum == ECPPOdaEnum::Ultimate)
+	{
+		//前ダッシュする
+		OdaMoveEnum = ECPPOdaEnum::Moveflont;
+		//切り替えるにあたって変数を初期化する
+		TimeCounter = 0;
+		//待機モーションに切り替える
+		Cast < UCharacterAnimInstance>(GetMesh()->GetAnimInstance())->SetCharacterState(ECharacterState::State_Idle);
+	}	
+
 }
 
 void AOdaBase::InMovie()
@@ -477,7 +441,9 @@ void AOdaBase::OdaMovie(int Timer)
 	{
 		OdaMoveEnum = ECPPOdaEnum::Stay1;
 	}
-	if (Timer % 260 == 0)
+	//if (Timer % 520 == 0)
+	//if (Timer % 130 == 0)
+	if (Timer % (int)(260.f / (60.f / GetFps())) == 0)
 	{
 		MovieMove = true;
 	}
@@ -486,7 +452,7 @@ void AOdaBase::OdaMovie(int Timer)
 		//動かす
 		if (GetActorLocation().Y < UGameplayStatics::GetPlayerPawn(GetWorld(), 0)->GetActorLocation().Y)
 		{
-			SetActorLocation(FVector(GetActorLocation().X, GetActorLocation().Y + 3.5f, GetActorLocation().Z), true);
+			SetActorLocation(FVector(GetActorLocation().X, GetActorLocation().Y + 3.5f * (60.f / GetFps()), GetActorLocation().Z), true);
 		}
 	}
 }
@@ -576,24 +542,23 @@ void AOdaBase::OdaAttack1(int Timer) {
 			Attack1Delay = 0;
 			//振り向かないようにする
 			isNowAttacking = true;
+			//現在体力を保存しておく
+			HoldHealth = Health;
 		}
+	}
+	//攻撃モーション中に指定の体力以上削られた時
+	if (HoldHealth - Health >= 120.f)
+	{
+		StopAnimMontage();
+		//ノックバック処理を起動
+		BossKnockback();
+
 	}
 
 	//アニメーションが終了したら
 	if (Timer > iAnimTime.Attack1)
 	{
-		//振り向けるようにする
-		isNowAttacking = false;
-		isDamageHit = false;
-		//ステートを切り替える
-		BacktoStayCase();
-		//リセット
-		NotAttackCount = 0;
-		//ノックバック中に攻撃モーションに入るとHPロックが作動し続けてしまうのでここで切り替える
-		if (isHPLock == true)
-		{
-			HPLock();
-		}
+		FinishAnimation();
 	}
 }
 
@@ -630,21 +595,7 @@ void AOdaBase::OdaAttack2(int Timer) {
 	//アニメーションが終了したら
 	if (Timer > iAnimTime.Attack2)
 	{
-		//振り向けるようにする
-		isNowAttacking = false;
-
-		//前ダッシュしてみる
-		OdaMoveEnum = ECPPOdaEnum::Moveflont;
-
-		//切り替えるにあたって変数を初期化する
-		TimeCounter = 0;
-		//リセット
-		NotAttackCount = 0;
-		//ノックバック中に攻撃モーションに入るとHPロックが作動し続けてしまうのでここで切り替える
-		if (isHPLock == true)
-		{
-			HPLock();
-		}
+		FinishAnimation();
 	}
 }
 /*
@@ -654,8 +605,8 @@ void AOdaBase::OdaAttack2(int Timer) {
  */
 void AOdaBase::OdaUlt(int Timer)
 {
-
-	if (Timer % 30 == 0 && isUltShotTiming != true)
+	if (Timer % 60 / (120.f / GetFps()) == 0 && isUltShotTiming != true)
+	//if (Timer % 15 == 0 && isUltShotTiming != true)
 	{
 		isUltShotTiming = true;
 	}
@@ -690,18 +641,7 @@ void AOdaBase::OdaUlt(int Timer)
 		BossHPRock();
 	}
 
-	//衝撃波を出したいのでNotifyを使って制御する(UltSpawnFlagChangeにて変数の中身を変更)
-	if (isShockWaveSpawnTiming == true)
-	{
-		//ダメージ値を代入
-		BladeDamage = UltShockWaveDamage;
-		//アクターのスポーン処理(ShockWaveSpawnはブループリント上で設定)
-		GetWorld()->SpawnActor<AActor>(ShockWaveSpawn, GetActorTransform());
-		//一度だけスポーンさせたいので切り替えておく
-		isShockWaveSpawnTiming = false;
-	}
-
-	//アニメーションの最後に必殺技を出したいのでNotifyを使って制御する(UltSpawnFlagChangeにて変数の中身を変更)
+	//アニメーション中に必殺技を出したいのでNotifyを使って制御する(UltSpawnFlagChangeにて変数の中身を変更)
 	if (isUltSpawnTiming == true)
 	{
 		//アクターのスポーン処理(UltSpawnはブループリント上で設定)
@@ -715,17 +655,7 @@ void AOdaBase::OdaUlt(int Timer)
 	//アニメーションが終了したら
 	if (Timer > iAnimTime.Ultimate)
 	{
-		//振り向けるようにする
-		isNowAttacking = false;
-
-		//ステートを切り替える
-		OdaMoveEnum = ECPPOdaEnum::Moveflont;
-		//待機モーションに切り替える
-		Cast < UCharacterAnimInstance>(GetMesh()->GetAnimInstance())->SetCharacterState(ECharacterState::State_Idle);
-
-
-		//切り替えるにあたって変数を初期化する
-		TimeCounter = 0;
+		FinishAnimation();
 		isUltShotTiming = false;
 	}
 }
@@ -824,8 +754,6 @@ void AOdaBase::TakedDamage(float Damage , bool _bLastAttacked)
 	}
 	//現在の状態を保存
 	HoldOdaMoveEnum = OdaMoveEnum;
-	//動きを止める
-	OdaMoveEnum = ECPPOdaEnum::Stop;
 
 	if (isHPLock != true)
 	{
@@ -835,7 +763,7 @@ void AOdaBase::TakedDamage(float Damage , bool _bLastAttacked)
 			//フラグを切り替える
 			SpawnDelay = false;
 			//攻撃のディレイをセット
-			Attack1Delay = 10;
+			Attack1Delay = 2;
 		}
 
 		if (isMove)
@@ -1027,7 +955,7 @@ void AOdaBase::HPLock()
 void AOdaBase::BossMoveX(float Speed)
 {
 	//上下方向に歩く処理
-	SetActorLocation(FVector(GetActorLocation().X + Speed, GetActorLocation().Y, GetActorLocation().Z));
+	SetActorLocation(FVector(GetActorLocation().X + Speed , GetActorLocation().Y, GetActorLocation().Z));
 	Cast < UCharacterAnimInstance>(GetMesh()->GetAnimInstance())->SetCharacterState(ECharacterState::State_Move);
 
 }
@@ -1040,7 +968,7 @@ void AOdaBase::BossMoveX(float Speed)
 void AOdaBase::BossMoveY(float Speed)
 {
 	//正面方向に歩く処理
-	SetActorLocation(FVector(GetActorLocation().X, GetActorLocation().Y + Speed, GetActorLocation().Z));
+	SetActorLocation(FVector(GetActorLocation().X, GetActorLocation().Y + Speed , GetActorLocation().Z));
 
 	Cast < UCharacterAnimInstance>(GetMesh()->GetAnimInstance())->SetCharacterState(ECharacterState::State_Move);
 }
@@ -1162,8 +1090,10 @@ void AOdaBase::Death()
 
 
 // 攻撃が当たった時の処理
-void AOdaBase::Attack_Sword(TTuple<TArray<AActor*>, TArray<FVector>> HitActorAndLocation)
+void AOdaBase::Attack()
 {
+	TTuple<TArray<AActor*>, TArray<FVector>> HitActorAndLocation = WeaponComp->SetCollision();
+
 	//今当たっているアクターが取れる(AActor*)
 	TArray<AActor*> DamageInfo = HitActorAndLocation.Get<0>();
 
@@ -1225,7 +1155,7 @@ void AOdaBase::PlayerOnOverlap(/*FHitResult& _HitResult*/)
 		return;
 	}
 
-	//Weapon->SetCollision();
+	Attack();
 
 	//リセット
 	bIsAttacked = true;

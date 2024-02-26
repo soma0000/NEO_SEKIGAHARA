@@ -14,7 +14,8 @@
 				"UMG",
 				"GeometryCollectionEngine",
 				"AIModule",
-				"DebugModule"
+				"DebugModule",
+				"Foliage"
 			]
 		},
 		{

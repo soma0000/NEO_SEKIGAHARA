@@ -14,7 +14,6 @@
 // Sets default values for this component's properties
 UActionAssistComponent::UActionAssistComponent()
 	: bUseCorrectAttackAngle(true)
-	, bUseHitStop(true)
 	, bUseHitEffect(true)
 	, bUseFaceCamera(true)
 {

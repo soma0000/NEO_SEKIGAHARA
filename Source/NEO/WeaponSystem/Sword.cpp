@@ -23,7 +23,7 @@ ASword::ASword()
 	SetupCollisionComponent(WeaponCollision);
 
 	// •Ší‚Ìí—Ş‚ğ“‚Éİ’è
-	WeaponType = EWeaponType::WeaponType_Sword;
+	WeaponType = EWeaponType::Sword;
 }
 
 // Called when the game starts or when spawned

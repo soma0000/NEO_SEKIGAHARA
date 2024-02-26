@@ -17,11 +17,12 @@
 #include "NiagaraComponent.h"									//ナイアガラエフェクトを呼ぶために必要なヘッダー
 #include "NiagaraFunctionLibrary.h"								//ナイアガラエフェクトを呼ぶために必要なヘッダー
 #include "NEO/CharacterSystem/ActionAssistComponent.h"
+#include "NEO/WeaponSystem/WeaponComponent.h"
 #include "NEO/CharacterSystem/EnemyBase.h"
 
 #include "OdaBase.generated.h"
 
-class AWeaponBase;
+class AWeaponComponent;
 
 USTRUCT(BlueprintType)
 struct FEnemyInfo {
@@ -125,8 +126,11 @@ protected:
 	//---------------------------------------------------
 
 public:
+	UFUNCTION(BlueprintCallable)
+		float GetFps();
+
 	//列挙型
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		ECPPOdaEnum OdaMoveEnum;
 
 protected:
@@ -170,6 +174,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BoxComp", meta = (AllowPrivateAccess = "true"))
 		UBoxComponent* BoxComp;
 
+	UPROPERTY(EditAnywhere, Category = "WeaponComp", meta = (AllowPrivateAccess = "true"))
+		UWeaponComponent* WeaponComp;
+
 	//キャラクタームーブメント
 	UPROPERTY()
 		UCharacterMovementComponent* NobunagaMovement;
@@ -188,7 +195,7 @@ public:
 		virtual void TakedDamage(float Damage , bool _bLastAttacked = false);
 
 	// 攻撃が当たった時の処理
-	virtual void Attack_Sword(TTuple<TArray<AActor*>, TArray<FVector>> HitActorAndLocation);	// 刀の処理
+	virtual void Attack();	// 刀の処理
 
 
 	UFUNCTION()
@@ -410,6 +417,10 @@ public:
 		int StartMovie;
 	};
 
+	//アニメーションが終了した時の共通処理
+	UFUNCTION()
+		void FinishAnimation();
+
 	AnimTime iAnimTime;
 
 	//スタートムービーアニメーションを一回だけ流す為の変数
@@ -508,6 +519,10 @@ public:
 
 	UPROPERTY(EditAnywhere)
 		float MaxHealth;
+
+	//一時保存用体力
+	UPROPERTY()
+		float HoldHealth;
 
 protected:
 	AActor* GetPlayer();

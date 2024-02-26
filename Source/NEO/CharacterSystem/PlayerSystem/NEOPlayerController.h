@@ -64,7 +64,7 @@ private:
 		float RespownPosHeight;
 
 	// PressAnyからFキーは除く
-	FName KeyNames[10] = { "F1","F2","F3","F4","F5","F6","F7","F8","F9","F10" };
+	FName KeyNames[12] = { "F1","F2","F3","F4","F5","F6","F7","F8","F9","F10","F11","F12"};
 
 	// プレイヤーの復活可能回数
 	int RemainingLives;

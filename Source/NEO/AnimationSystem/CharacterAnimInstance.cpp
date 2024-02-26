@@ -6,7 +6,7 @@
 #include "GameFramework/Character.h"
 
 UCharacterAnimInstance::UCharacterAnimInstance()
-    : WeaponType(EWeaponType::WeaponType_None)
+    : WeaponType(EWeaponType::None)
 {
 }
 

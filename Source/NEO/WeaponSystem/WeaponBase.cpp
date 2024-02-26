@@ -9,13 +9,16 @@
 #include "Components/CapsuleComponent.h"
 #include "NEO/CharacterSystem/ActionAssistComponent.h"
 
+#define JUMP_HEIGHT (PreviousHeight + InitialVelocity * Frames - 0.5f * Gravity * Frames * Frames)
+#define JUMP_VELOCITY (InitialVelocity - Gravity * Frames) 
+#define DROP_WEAPON_ANGLE (90.0)
+
 
 // Sets default values
 AWeaponBase::AWeaponBase()
 	: WeaponState(EWeaponState::PickUp)
-	, Frames(0.f)
 	, Damage(0)
-	, JumpHeight(150.f)
+	, Frames(0.f)
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -45,7 +48,7 @@ void AWeaponBase::Tick(float DeltaTime)
 
 	if (WeaponState == EWeaponState::Fall)
 	{
-		BlowsAway();
+		BlowsAway(DeltaTime);
 	}
 }
 
@@ -62,24 +65,23 @@ void AWeaponBase::SetupWeaponMesh(TObjectPtr<UStaticMeshComponent>& MeshComp, TC
 	// 武器のコンポーネントを作成
 	MeshComp = CreateDefaultSubobject<UStaticMeshComponent>(PublicName);
 
-	if (WeaponAssetPath)
+	if (!MeshComp || !WeaponAssetPath) { return; }
+
+	// 武器のアセット設定
+	ConstructorHelpers::FObjectFinder< UStaticMesh > weaponMesh(WeaponAssetPath);
+
+	if (weaponMesh.Succeeded())
 	{
-		// 武器のアセット設定
-		ConstructorHelpers::FObjectFinder< UStaticMesh > weaponMesh(WeaponAssetPath);
+		MeshComp->SetStaticMesh(weaponMesh.Object);
 
-		if (weaponMesh.Succeeded())
-		{
-			MeshComp->SetStaticMesh(weaponMesh.Object);
+		// ルートに設定
+		RootComponent = MeshComp;
+	}
 
-			// ルートに設定
-			RootComponent = MeshComp;
-		}
-
-		// エフェクトを追従
-		if (AuraEffect)
-		{
-			AuraEffect->SetupAttachment(RootComponent);
-		}
+	// エフェクトを追従
+	if (AuraEffect)
+	{
+		AuraEffect->SetupAttachment(RootComponent);
 	}
 }
 
@@ -96,24 +98,23 @@ void AWeaponBase::SetupWeaponMesh(TObjectPtr<USkeletalMeshComponent>& MeshComp, 
 	// 武器のコンポーネントを作成
 	MeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(PublicName);
 
-	if (WeaponAssetPath)
+	if (!MeshComp || !WeaponAssetPath) { return; }
+
+	// 武器のアセット設定
+	ConstructorHelpers::FObjectFinder< USkeletalMesh > weaponMesh(WeaponAssetPath);
+
+	if (weaponMesh.Succeeded())
 	{
-		// 武器のアセット設定
-		ConstructorHelpers::FObjectFinder< USkeletalMesh > weaponMesh(WeaponAssetPath);
+		MeshComp->SetSkeletalMeshAsset(weaponMesh.Object);
 
-		if (weaponMesh.Succeeded())
-		{
-			MeshComp->SetSkeletalMeshAsset(weaponMesh.Object);
+		// ルートに設定
+		RootComponent = MeshComp;
+	}
 
-			// ルートに設定
-			RootComponent = MeshComp;
-		}
-
-		// エフェクトを追従
-		if (AuraEffect)
-		{
-			AuraEffect->SetupAttachment(RootComponent);
-		}
+	// エフェクトを追従
+	if (AuraEffect)
+	{
+		AuraEffect->SetupAttachment(RootComponent);
 	}
 }
 
@@ -128,7 +129,7 @@ void AWeaponBase::SetupWeaponMesh(TObjectPtr<USkeletalMeshComponent>& MeshComp, 
 void AWeaponBase::AttachToCharacter(ACharacter* _owner, FName _socketName)
 {
 	// 飛んでいるときは取れない
-	if (!GetIsPickUp()) { return; }
+	if (WeaponState != EWeaponState::PickUp) { return; }
 
 	// 持たれている状態に
 	WeaponState = EWeaponState::Held;
@@ -163,8 +164,8 @@ void AWeaponBase::DetachFromCharacter()
 	// オーナーを外す
 	pOwner = nullptr;
 
-	// 飛ぶ前の場所設定
-	FlyBeforePos = GetActorLocation();
+	// ジャンプ前の高さ取得
+	PreviousHeight = GetActorLocation().Z;
 }
 
 
@@ -215,20 +216,17 @@ bool AWeaponBase::GetHitResults(TArray<FHitResult>& _outHitResults,FVector _star
  * 処理内容　　　：武器が落ちて地面に刺さる
  * 戻り値　　　　：なし
  */
-void AWeaponBase::BlowsAway()
+void AWeaponBase::BlowsAway(float DeltaTime)
 {
-	// 現在位置
+	// 現在位置取得
 	FVector NowPos = GetActorLocation();
 
-	// Sinで高さ更新
-	float SinValue = JumpHeight * FMath::Sin(RadPerFrame * Frames);
-
 	// ジャンプ前の高さから位置更新
-	const FVector nextPos(FVector(NowPos.X, NowPos.Y, SinValue + FlyBeforePos.Z));
+	const FVector nextPos(FVector(NowPos.X, NowPos.Y, JUMP_HEIGHT));
 	SetActorLocation(nextPos);
 
 	// フレーム更新
-	Frames += 1.f;
+	Frames += DeltaTime * 20.f;
 
 	// 現在の回転取得
 	FRotator NowRotation = GetActorRotation();
@@ -236,32 +234,102 @@ void AWeaponBase::BlowsAway()
 	// 常に回転
 	SetActorRotation(FRotator(NowRotation.Pitch, NowRotation.Yaw, NowRotation.Roll + 10.0));
 
-	// 元の位置より低くなったら終了
-	if (NowPos.Z < FlyBeforePos.Z)
-	{
-		// 持たれていない状態にする
-		WeaponState = EWeaponState::PickUp;
-		
-		// フレームリセット
-		Frames = 0.f;
-
-		// 落下音再生
-		if (DropWeaponSoundObj)
-		{
-			// 斬撃SE再生
-			ActionAssistComp->PlaySound(DropWeaponSoundObj);
-		}
-
-		// 地面に刺さるように位置と角度を補正
-		SetActorLocation(FlyBeforePos + DropLocation);
-		SetActorRotation(DropAngle);
-
-		if (AuraEffect)
-		{
-			// エフェクトを見えるようにする
-			AuraEffect->SetVisibility(true);
-		}
-	}
+	// 着地処理
+	if (JUMP_VELOCITY > 0.f) { return; }
+	if (IsLanding()) { HandleLanding(); }
 }
 
 
+/*
+ * 関数名　　　　：IsLanding()
+ * 処理内容　　　：着地判定
+ * 戻り値　　　　：着地しているか
+ */
+bool AWeaponBase::IsLanding()
+{
+	// 始点と終点を指定
+	FVector start = GetActorLocation();
+	FVector end = FVector(start.X, start.Y, start.Z - RayLength);
+
+	// 自身を除く
+	FCollisionQueryParams CollisionParams;
+	CollisionParams.AddIgnoredActor(this);
+
+	// 判定
+	FHitResult OutHit;
+	GetWorld()->LineTraceSingleByChannel(OutHit, start, end, ECC_WorldStatic, CollisionParams);
+
+	// 地面にヒットした場合true
+	AActor* HitActor = OutHit.GetActor();
+
+	bool IsLand = HitActor && HitActor->ActorHasTag("Land");
+
+	return IsLand;
+}
+
+
+/*
+ * 関数名　　　　：HandleLanding()
+ * 処理内容　　　：着地処理
+ * 戻り値　　　　：なし
+ */
+void AWeaponBase::HandleLanding()
+{
+	// フレームリセット
+	Frames = 0.f;
+
+	// 地面に刺さるように位置と角度を補正
+	AdjustLandingPosition();
+	AdjustLandingAngle();
+
+	// 落下音再生
+	if (DropWeaponSoundObj) { ActionAssistComp->PlaySound(DropWeaponSoundObj); }
+
+	// エフェクトを見えるようにする
+	if (AuraEffect) { AuraEffect->SetVisibility(true); }
+
+	// 持たれていない状態にする
+	WeaponState = EWeaponState::PickUp;
+}
+
+
+/*
+ * 関数名　　　　：AdjustLandingPosition()
+ * 処理内容　　　：着地時に位置を補正
+ * 戻り値　　　　：なし
+ */
+void AWeaponBase::AdjustLandingPosition()
+{
+	FVector NowPos = GetActorLocation();
+
+	SetActorLocation(FVector(NowPos.X, NowPos.Y, NowPos.Z));
+}
+
+
+/*
+ * 関数名　　　　：AdjustLandingPosition()
+ * 処理内容　　　：着地時にランダムに角度を補正
+ * 戻り値　　　　：なし
+ */
+void AWeaponBase::AdjustLandingAngle()
+{
+	// 角度の要素数取得
+	int AnglesElement = CorrectDropAngles.Num();
+
+	// 現在の角度取得
+	FRotator NewAngle = FRotator::ZeroRotator;
+
+	// 用意された角度の中からランダムで決定
+	if (WeaponType == EWeaponType::Gun)
+	{
+		NewAngle.Pitch = (AnglesElement > 0) ? (CorrectDropAngles[FMath::Rand() % AnglesElement]) : (DROP_WEAPON_ANGLE - DROP_WEAPON_ANGLE);
+		NewAngle.Yaw = (FMath::RandBool()) ? (DROP_WEAPON_ANGLE) : (-DROP_WEAPON_ANGLE);
+	}
+	else
+	{
+		NewAngle.Roll = (AnglesElement > 0) ? (CorrectDropAngles[FMath::Rand() % AnglesElement]) : (DROP_WEAPON_ANGLE - DROP_WEAPON_ANGLE);
+		NewAngle.Yaw = (FMath::RandBool()) ? (DROP_WEAPON_ANGLE - DROP_WEAPON_ANGLE) : (DROP_WEAPON_ANGLE + DROP_WEAPON_ANGLE);
+	}
+
+	SetActorRotation(NewAngle);
+}

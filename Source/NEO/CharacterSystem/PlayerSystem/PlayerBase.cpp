@@ -5,14 +5,14 @@
 #include "Kismet/GameplayStatics.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "DebugComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "NEOPlayerController.h"
 #include "NEO/GameSystem/NEOGameMode.h"
 #include "NEO/BackGroundSystem/ObjectBase.h"
 #include "NEO/CharacterSystem/CharacterBase.h"
 #include "NEO/CharacterSystem/ActionAssistComponent.h"
-#include "NEO/WeaponSystem/Gun.h"
+#include "NEO/WeaponSystem/WeaponComponent.h"
+#include "DebugComponent.h"
 
 // Sets default values
 APlayerBase::APlayerBase()
@@ -75,7 +75,7 @@ void APlayerBase::Tick(float DeltaTime)
 	// ジャンプ中のみ処理
 	if (State == EPlayerState::Jump)
 	{
-		Jump();
+		Jump(DeltaTime);
 	}
 }
 
@@ -95,8 +95,8 @@ void APlayerBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 		EnhancedInputComponent->BindAction(MainActionMapping.JumpAction, ETriggerEvent::Started, this, &APlayerBase::JumpStart);
 
 		// 攻撃アクション
-		EnhancedInputComponent->BindAction(MainActionMapping.ComboAction1, ETriggerEvent::Started, this, &APlayerBase::Attack1);
-		EnhancedInputComponent->BindAction(MainActionMapping.ComboAction2, ETriggerEvent::Started, this, &APlayerBase::Attack2);
+		EnhancedInputComponent->BindAction(MainActionMapping.ComboAction1, ETriggerEvent::Started, this, &APlayerBase::AttackStart1);
+		EnhancedInputComponent->BindAction(MainActionMapping.ComboAction2, ETriggerEvent::Started, this, &APlayerBase::AttackStart2);
 
 
 		if (!DebugComponent) { return; }
@@ -147,8 +147,11 @@ void APlayerBase::SetupDebugEventBindings()
  */
 void APlayerBase::InitPlayerData()
 {
-	// デバッグコンポーネント作成作成
+	// デバッグコンポーネント作成
 	DebugComponent = CreateDefaultSubobject<UDebugComponent>(TEXT("Debug"));
+
+	// 武器コンポーネント作成
+	WeaponComponent = CreateDefaultSubobject<UWeaponComponent>(TEXT("Weapon"));
 
 	// デバッグ用関数バインド
 	SetupDebugEventBindings();
@@ -157,16 +160,11 @@ void APlayerBase::InitPlayerData()
 	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &APlayerBase::OnOverlap);
 
 	// ステータス初期化
-	InitStatus(2, 500.f, 150.f, 1.f);
+	InitStatus(2, 500.f, 100.f, 1.f);
 
 	// 被ダメージ時の無敵時間設定
 	InvincibilityTime_Short = 0.3f;			// 通常状態
 	InvincibilityTime_Long = 0.5f;			// 武器を落とすとき
-
-	// 武器種によってソケットを変更
-	SocketNames.Add("hand_rSocket_Sword");
-	SocketNames.Add("hand_rSocket_Lance");
-	SocketNames.Add("hand_rSocket_Gun");
 
 	// コンボの名前格納
 	ComboStartSectionNames = { "First", "Second", "Third","Fourth" };
@@ -274,7 +272,7 @@ void APlayerBase::JumpStart()
  * 処理内容　　　：プレイヤーのジャンプ中処理
  * 戻り値　　　　：なし
  */
-void APlayerBase::Jump()
+void APlayerBase::Jump(float _deltaTime)
 {
 	// 現在位置
 	FVector NowPos = GetActorLocation();
@@ -293,8 +291,8 @@ void APlayerBase::Jump()
 		State = EPlayerState::Idle;
 	}
 
-	// フレーム+1
-	frames += 1.f;
+	// 経過時間
+	frames += _deltaTime * (1.f / _deltaTime);
 }
 
 
@@ -329,7 +327,7 @@ void APlayerBase::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Ot
 		AWeaponBase* NewWeapon = Cast<AWeaponBase>(OtherActor);
 
 		// 武器を拾う
-		if (AttachWeapon(NewWeapon, SocketNames[int32(NewWeapon->GetWeaponType())], false))
+		if (WeaponComponent->AttachWeapon(NewWeapon, WeaponComponent->GetSocketName(int32(NewWeapon->GetWeaponType())), false))
 		{
 			// 武器を落とすまでの被ダメージ回数リセット
 			DefaultDamageLimit = GetStatus().HP;
@@ -346,18 +344,20 @@ void APlayerBase::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Ot
  */
 void APlayerBase::ComboAttack(int _attackNum /*= 0*/)
 {
-	switch (GetWeaponType())
+	if (!WeaponComponent->GetWeapon()) { return; }
+
+	switch (WeaponComponent->GetWeaponType())
 	{
-	case EWeaponType::WeaponType_Sword:
+	case EWeaponType::Sword:
 		PlayComboAnimtion_Sword(_attackNum);
 		break;
-	case EWeaponType::WeaponType_Lance:
+	case EWeaponType::Lance:
 		PlayComboAnimtion_Lance(_attackNum);
 		break;
-	case EWeaponType::WeaponType_Gun:
+	case EWeaponType::Gun:
 		PlayComboAnimtion_Gun(_attackNum);
 		break;
-	case EWeaponType::WeaponType_None:
+	case EWeaponType::None:
 
 		break;
 	}
@@ -369,7 +369,7 @@ void APlayerBase::ComboAttack(int _attackNum /*= 0*/)
  * 処理内容　　　：プレイヤーの入力受付(攻撃１つ目)
  * 戻り値　　　　：なし
  */
-void APlayerBase::Attack1()
+void APlayerBase::AttackStart1()
 {
 	if (!(State == EPlayerState::Idle || State == EPlayerState::Move || State == EPlayerState::Jump || State == EPlayerState::Attack)) { return; }
 
@@ -382,12 +382,39 @@ void APlayerBase::Attack1()
  * 処理内容　　　：プレイヤーの入力受付(攻撃２つ目)
  * 戻り値　　　　：なし
  */
-void APlayerBase::Attack2()
+void APlayerBase::AttackStart2()
 {
 	if (!(State == EPlayerState::Idle || State == EPlayerState::Move || State == EPlayerState::Jump || State == EPlayerState::Attack)) { return; }
 
 	// コンボ攻撃
 	ComboAttack(1);
+}
+
+
+/*
+ * 関数名　　　　：Attack()
+ * 処理内容　　　：プレイヤーの入力受付(攻撃２つ目)
+ * 戻り値　　　　：なし
+ */
+void APlayerBase::Attack()
+{
+	// 武器が取得できないとき処理しない
+	if (!WeaponComponent->GetWeapon()) { return; }
+
+	switch (WeaponComponent->GetWeaponType())
+	{
+	case EWeaponType::Sword:
+		Attack_Sword(WeaponComponent->SetCollision());
+		break;
+
+	case EWeaponType::Lance:
+		Attack_Lance(WeaponComponent->SetCollision());
+		break;
+
+	case EWeaponType::Gun:
+		Attack_Gun();
+		break;
+	}
 }
 
 
@@ -400,7 +427,7 @@ void APlayerBase::Attack2()
 void APlayerBase::Attack_Sword(TTuple<TArray<AActor*>, TArray<FVector>> HitActorAndLocation)
 {
 	// 武器が取得できないとき処理しない
-	if (!GetWeapon()) { return; }
+	if (!WeaponComponent->GetWeapon()) { return; }
 
 	// 当たったActorと位置を取得
 	TArray<AActor*> HitActors = HitActorAndLocation.Get<0>();
@@ -480,7 +507,7 @@ void APlayerBase::Attack_Sword(TTuple<TArray<AActor*>, TArray<FVector>> HitActor
 void APlayerBase::Attack_Lance(TTuple<TArray<AActor*>, TArray<FVector>> HitActorAndLocation)
 {
 	// 武器が取得できないとき処理しない
-	if (!GetWeapon()) { return; }
+	if (!WeaponComponent->GetWeapon()) { return; }
 
 	// 当たったActorと位置を取得
 	TArray<AActor*> HitActors = HitActorAndLocation.Get<0>();
@@ -559,12 +586,12 @@ void APlayerBase::Attack_Lance(TTuple<TArray<AActor*>, TArray<FVector>> HitActor
 void APlayerBase::Attack_Gun()
 {
 	// 武器が取得できないとき処理しない
-	if (!GetWeapon()) { return; }
+	if (!WeaponComponent->GetWeapon()) { return; }
 
 	if (!IsKicking)
 	{
 		// 銃の射撃処理
-		Cast<AGun>(GetWeapon())->Shoot();
+		WeaponComponent->SetCollision();
 
 		return;
 	}
@@ -577,7 +604,7 @@ void APlayerBase::Attack_Gun()
 	TArray<FHitResult> OutHitResults;
 
 	//当たっているか確認
-	bool IsHit = GetWeapon()->GetHitResults(OutHitResults, Start, End);
+	bool IsHit = WeaponComponent->GetWeapon()->GetHitResults(OutHitResults, Start, End);
 
 	// 当たっていなかったらスルー
 	if (!IsHit) { return; }
@@ -725,6 +752,16 @@ void APlayerBase::RotateCharacter(float _nowInput_X)
 
 
 /*
+ * 関数名　　　　：GetDamageAmount()
+ * 処理内容　　　：現在のダメージ量を返す
+ * 戻り値　　　　：攻撃力
+ */
+float APlayerBase::GetDamageAmount()const
+{
+	return WeaponComponent->GetWeaponDamage() * (((float)ComboIndex + 1.f) * GetStatus().ComboDamageFactor); 
+}
+
+/*
  * 関数名　　　　：SlowDownDeathAnimationRate()
  * 処理内容　　　：死亡時アニメーション引き伸ばし
  * 戻り値　　　　：なし
@@ -801,8 +838,10 @@ void APlayerBase::OnDamage(bool _isLastAttack)
 		// 長い無敵時間を適用
 		InvincibilityReleaseTime = InvincibilityTime_Long;
 
+		HitStop(0.1f,0.1f);
+
 		// 武器を落とす
-		DetachWeapon(false);
+		WeaponComponent->DetachWeapon(false);
 
 		// ノックバックアニメーション再生
 		PlayAnimation(PlayerAnimation.KnockBack);
@@ -912,7 +951,7 @@ void APlayerBase::OnDamage(bool _isLastAttack)
 	 if (State == EPlayerState::Death || IsInvincibility || AbsolutelyInvincible) { return; }
 
 	 // 武器を持っていないときに攻撃を受けたら死亡
-	 if (!GetWeapon() && State != EPlayerState::Death)
+	 if (!WeaponComponent->GetWeapon() && State != EPlayerState::Death)
 	 {
 		 OnDeath();
 	 }
@@ -1021,7 +1060,7 @@ void APlayerBase::OnDamage(bool _isLastAttack)
  void APlayerBase::SetDeath()
  {
 	 // 武器を落とす
-	 DetachWeapon(false);
+	 WeaponComponent->DetachWeapon(false);
 
 	 TakedDamage(0);
  }

@@ -56,9 +56,6 @@ protected:
 		bool bUseCorrectAttackAngle;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action Assist")
-		bool bUseHitStop;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action Assist")
 		bool bUseHitEffect;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action Assist")

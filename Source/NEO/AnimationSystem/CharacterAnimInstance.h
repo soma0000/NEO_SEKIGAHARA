@@ -35,7 +35,7 @@ public:
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
 	// 武器の種類を登録
-	void SetWeaponType(EWeaponType _weaponType = EWeaponType::WeaponType_None) { WeaponType = _weaponType; }
+	void SetWeaponType(EWeaponType _weaponType = EWeaponType::None) { WeaponType = _weaponType; }
 
 	// キャラクターの状態をセット
 	void SetCharacterState(ECharacterState _charaState = ECharacterState::State_Idle) { State = _charaState; }

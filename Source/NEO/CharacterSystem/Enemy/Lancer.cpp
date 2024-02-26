@@ -4,7 +4,7 @@
 #include "Components/BoxComponent.h"
 #include "GameFramework/Controller.h"
 #include "Kismet/GameplayStatics.h"
-#include "NEO/WeaponSystem/WeaponBase.h"
+#include "NEO/WeaponSystem/WeaponComponent.h"
 
 
 ALancer::ALancer()
@@ -67,9 +67,9 @@ FVector ALancer::GetSnappedDirection(const FVector& Direction) const
  */
 void ALancer::CollisionOn()
 {
-    if (GetWeapon())
+    if (WeaponComp->GetWeapon())
     {
-        SetCollision();
+        Attack();
     }
 }
 /*
@@ -143,9 +143,9 @@ void ALancer::Tick(float DeltaTime)
     }
     if (Health <= 0&&bGetAway==false)
     {
-        if (GetWeapon())
+        if (WeaponComp->GetWeapon())
         {
-            DetachWeapon(false);
+            WeaponComp->DetachWeapon(false);
         }
     }
  
@@ -191,7 +191,7 @@ void ALancer::DistanceFromEnemies()
 void ALancer::Death()
 {
     DestoryEnemy();
-    GetWeapon()->Destroy();
+    WeaponComp->DetachWeapon(true);
 }
 void ALancer::SppedHighChange()
 {
@@ -262,7 +262,7 @@ void ALancer::CheckPlayerInFront()
                     {
                         if (FMath::FRand() < 0.8f)
                         {
-                            PlayAnimMontage(Attack, 1, NAME_None);
+                            PlayAnimMontage(Attack1, 1, NAME_None);
                               
                         }
 

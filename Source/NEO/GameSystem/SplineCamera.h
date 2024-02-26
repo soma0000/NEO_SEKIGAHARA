@@ -20,7 +20,7 @@ public:
 
 private:
 
-	class ANEOGameMode* pGameMode;
+	class ANEOPlayerController* PlayerController;
 
 protected:
 	// Called when the game starts or when spawned
@@ -37,17 +37,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 		class USplineComponent* SplineComponent;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
-		class UBoxComponent* BoxComponent;
-
 public:
 	//Camera Speed
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
 		float CameraSpeed;
-
-	//Camera MoveFlag
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
-		bool bMoveFlag;
 
 	//CurrentDistance
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")

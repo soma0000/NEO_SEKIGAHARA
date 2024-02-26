@@ -46,12 +46,13 @@ void UDebugComponent::SetupDebugInputComponent(UInputComponent* DebugInputCompon
 	{
 		EnhancedInputComponent->BindAction(DebugActions.Debug_ESC, ETriggerEvent::Started, this, &UDebugComponent::TriggerDebugEvent_ESC);
 
+		EnhancedInputComponent->BindAction(DebugActions.Debug_F1, ETriggerEvent::Started, this, &UDebugComponent::TriggerDebugEvent_F1);
+		EnhancedInputComponent->BindAction(DebugActions.Debug_F4, ETriggerEvent::Started, this, &UDebugComponent::TriggerDebugEvent_F4);
+
 // シッピング時デバッグキーを省く
 #if UE_BUILD_DEBUG || UE_BUILD_DEVELOPMENT
-		EnhancedInputComponent->BindAction(DebugActions.Debug_F1, ETriggerEvent::Started, this, &UDebugComponent::TriggerDebugEvent_F1);
 		EnhancedInputComponent->BindAction(DebugActions.Debug_F2, ETriggerEvent::Started, this, &UDebugComponent::TriggerDebugEvent_F2);
 		EnhancedInputComponent->BindAction(DebugActions.Debug_F3, ETriggerEvent::Started, this, &UDebugComponent::TriggerDebugEvent_F3);
-		EnhancedInputComponent->BindAction(DebugActions.Debug_F4, ETriggerEvent::Started, this, &UDebugComponent::TriggerDebugEvent_F4);
 		EnhancedInputComponent->BindAction(DebugActions.Debug_F5, ETriggerEvent::Started, this, &UDebugComponent::TriggerDebugEvent_F5);
 		EnhancedInputComponent->BindAction(DebugActions.Debug_F6, ETriggerEvent::Started, this, &UDebugComponent::TriggerDebugEvent_F6);
 		EnhancedInputComponent->BindAction(DebugActions.Debug_F7, ETriggerEvent::Started, this, &UDebugComponent::TriggerDebugEvent_F7);

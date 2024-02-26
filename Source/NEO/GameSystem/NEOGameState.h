@@ -6,27 +6,64 @@
 #include "GameFramework/GameStateBase.h"
 #include "NEOGameState.generated.h"
 
-
 // ゲームの状態を管理するEnum
 UENUM(BlueprintType)
 enum class EGameState_NEO : uint8
 {
+	OnNitiden		UMETA(DisplayName = "Nitiden"),			// 日電ロゴ
 	OnTitle			UMETA(DisplayName = "Title"),			// タイトル画面
+	OnDemo			UMETA(DisplayName = "Demo"),			// デモ画面
 	OnOpening		UMETA(DisplayName = "Opening"),			// オープニング
 	OnGamePlaying	UMETA(DisplayName = "InGame"),			// インゲーム
 	OnGameClear		UMETA(DisplayName = "GameClear"),		// クリア
 	OnGameOver		UMETA(DisplayName = "GameOver")			// オーバー
 };
 
-// タイトルの状態を管理するEnum
-UENUM(BlueprintType)
-enum class ETitleState_NEO : uint8
+//-----------------ウィジェット保管用---------------------------------------------------
+USTRUCT(BlueprintType)
+struct FGameWidget
 {
-	OnDisplay_None	UMETA(DisplayName = "None"),			// なにもしない
-	OnLogoDisplay	UMETA(DisplayName = "LogoMovie"),		// 日電のロゴ表示
-	OnTitleDisplay	UMETA(DisplayName = "Title"),			// タイトル画面
-	OnDemoDisplay	UMETA(DisplayName = "Demo"),			// デモ画面
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, Category = "Widget")
+		TSubclassOf<UUserWidget> NitidenWidgetClass;
+
+	UPROPERTY(EditAnywhere, Category = "Widget")
+		TSubclassOf<UUserWidget> TitleWidgetClass;
+
+	UPROPERTY(EditAnywhere, Category = "Widget")
+		TSubclassOf<UUserWidget> DemoWidgetClass;
+
+	UPROPERTY(EditAnywhere, Category = "Widget")
+		TSubclassOf<UUserWidget> OpningWidgetClass;
+
+	UPROPERTY(EditAnywhere, Category = "Widget")
+		TSubclassOf<UUserWidget> ClearWidgetClass;
+
+	UPROPERTY(EditAnywhere, Category = "Widget")
+		TSubclassOf<UUserWidget> OverWidgetClass;
 };
+//----------------------------------------------------------------------------------------
+
+//-----------------ウィジェット保管用---------------------------------------------------
+USTRUCT(BlueprintType)
+struct FGameSound
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, Category = "Sound")
+	TObjectPtr<USoundBase> TitleCall;
+
+	UPROPERTY(EditAnywhere, Category = "Sound")
+		TObjectPtr<USoundBase> Wind;
+
+	UPROPERTY(EditAnywhere, Category = "Sound")
+		TObjectPtr<USoundBase> Flag;
+
+	UPROPERTY(EditAnywhere, Category = "Sound")
+		TObjectPtr<USoundBase> Katari;
+};
+//----------------------------------------------------------------------------------------
 
 
 UCLASS()
@@ -40,6 +77,12 @@ class NEO_API ANEOGameState : public AGameStateBase
 
 public:
 
+	// ゲーム開始時の処理
+	void BeginPlay() override;
+
+	// 毎フレーム更新
+	void Tick(float DeltaTime) override;
+
 	// ゲームの状態を更新
 	void UpdateGameState(float DeltaTime);
 
@@ -51,14 +94,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "UpdateState")
 		EGameState_NEO GetGameState()const { return GameState; }
 
-	// タイトルステート取得
-	UFUNCTION(BlueprintCallable, Category = "UpdateState")
-		ETitleState_NEO GetTitleState()const { return TitleState; }
-
-	// タイトルステートセット
-	UFUNCTION(BlueprintCallable, Category = "UpdateState")
-		void SetTitleState(ETitleState_NEO _titleState){ TitleState = _titleState; }
-
 	// 次のステートへ移動する準備が整ったときに使用
 	UFUNCTION(BlueprintCallable, Category = "UpdateState")
 		void SetReadyUpdateGame(bool _isReadyToUpdateGame){ IsReadyToUpdateGame = _isReadyToUpdateGame; }
@@ -66,22 +101,6 @@ public:
 	// ゲームを任意の状態へ
 	UFUNCTION(BlueprintCallable, Category = "UpdateState")
 		void SetNextGameState(EGameState_NEO _nextGameState);
-
-	// タイトル画面を表示
-	UFUNCTION(BlueprintNativeEvent,BlueprintCallable, Category = "Title")
-		void DisplayTitleScreen();
-
-	virtual void DisplayTitleScreen_Implementation() {};
-
-	// デモ画面を表示
-	UFUNCTION(BlueprintNativeEvent,BlueprintCallable, Category = "DEMO")
-		void DisplayDemoScreen();
-
-	virtual void DisplayDemoScreen_Implementation() {};
-
-	// デモ画面を表示
-	UFUNCTION(BlueprintImplementableEvent)
-		void DeleteWidget();
 
 private:
 
@@ -94,8 +113,17 @@ private:
 	// インゲーム開始時にする処理
 	void InitInGame();
 
+	// デモ画面に移行する処理
+	void EnterDemoScreen();
+
+	// 日電ロゴ
+	void OnNitiden();
+
 	// タイトルの処理
 	void OnTitle();
+
+	// デモ画面の処理
+	void OnDemo();
 
 	// オープニングの処理
 	void OnOpening();
@@ -109,16 +137,54 @@ private:
 	// オーバーの処理
 	void OnGameOver();	
 
+	// 語りの音声再生
+	void SpawnKatariSound();
+
+protected:
+
+	UPROPERTY(EditAnywhere, Category = "Sound")
+		TObjectPtr<UAudioComponent> WindAudioComp;
+
+	UPROPERTY(EditAnywhere, Category = "Sound")
+		TObjectPtr<UAudioComponent> FlagAudioComp;
+
+	UPROPERTY(EditAnywhere, Category = "Sound")
+		TObjectPtr<UAudioComponent> KatariAudioComp;
+
+	UPROPERTY(EditAnywhere, Category = "Sound")
+		FGameSound GameSound;
+
+	UPROPERTY(EditAnywhere, Category = "Widget")
+		FGameWidget GameWidget;
+
+	UPROPERTY(VisibleAnywhere, Category = "Widget")
+		TObjectPtr<UUserWidget> NitidenWidget;
+
+	UPROPERTY(VisibleAnywhere, Category = "Widget")
+		TObjectPtr<UUserWidget> TitleWidget;
+
+	UPROPERTY(VisibleAnywhere, Category = "Widget")
+		TObjectPtr<UUserWidget> DemoWidget;
+
+	UPROPERTY(VisibleAnywhere, Category = "Widget")
+		TObjectPtr<UUserWidget> OpeningWidget;
+
+	UPROPERTY(VisibleAnywhere, Category = "Widget")
+		TObjectPtr<UUserWidget> OverWidget;
+
+
+	UPROPERTY(EditAnywhere, Category = "Time")
+		float DemoTransitionTime;
+
 private:
 
 	// ゲームの状態を管理
 	EGameState_NEO GameState;
 
-	// タイトルの状態を管理
-	ETitleState_NEO TitleState = ETitleState_NEO::OnLogoDisplay;
-
 	// ゲームを次の状態にアップデートする準備ができたか
 	bool IsReadyToUpdateGame;
+
+	FTimerHandle TimerHandle;
 
 	// プレイヤーのコントローラー格納用
 	UPROPERTY(VisibleAnywhere)

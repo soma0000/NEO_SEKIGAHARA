@@ -15,7 +15,7 @@
 #include "NEO/BackGroundSystem/GunFence.h"
 #include "NavigationPath.h"
 #include "Kismet/KismetMathLibrary.h"
-#include "NEO/WeaponSystem/WeaponBase.h"
+#include "NEO/WeaponSystem/WeaponComponent.h"
 
 
 // Sets default values
@@ -73,9 +73,9 @@ FVector AGunMan::GetSnappedDirection(const FVector& Direction) const
 
 void AGunMan::CollisionOn()
 {
-    if (GetWeapon())
+    if (WeaponComp->GetWeapon())
     {
-        SetCollision();
+        WeaponComp->SetCollision();
     }
 }
 /*
@@ -89,9 +89,9 @@ void AGunMan::Tick(float DeltaTime)
     Super::Tick(DeltaTime);
     if (Health <= 0)
     {
-        if (GetWeapon())
+        if (WeaponComp->GetWeapon())
         {
-            DetachWeapon(false);
+            WeaponComp->DetachWeapon(false);
         }
     }
   
@@ -258,7 +258,7 @@ void AGunMan::PlayAttackAnim()
 {
     if (Health > 0)
     {
-        PlayAnimMontage(Attack, 1.0f, NAME_None);
+        PlayAnimMontage(Attack1, 1.0f, NAME_None);
         GetWorldTimerManager().SetTimer(TickEnableTimerHandle, this, &AGunMan::EnableTickAfterDelay, 3.0f, false);
         MoveSpeed = 0;
         IsRunning = false;

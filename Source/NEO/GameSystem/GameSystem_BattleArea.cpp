@@ -26,7 +26,7 @@ AGameSystem_BattleArea::AGameSystem_BattleArea()
 	//:NowBattleArea(false)
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
 	SceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Scene"));
 	RootComponent = SceneComponent;
@@ -50,6 +50,8 @@ AGameSystem_BattleArea::AGameSystem_BattleArea()
 	
 	NearMesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("NearProceduralMesh"));
 	NearMesh->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+
+	StaticMeshComponent->OnComponentBeginOverlap.AddDynamic(this, &AGameSystem_BattleArea::BeginOverlap);
 }
 
 
@@ -57,17 +59,6 @@ AGameSystem_BattleArea::AGameSystem_BattleArea()
 void AGameSystem_BattleArea::BeginPlay()
 {
 	Super::BeginPlay();
-
-	//auto Transform = GetActorTransform();
-
-	//// RootのTransformを初期化
-	//GetRootComponent()->SetRelativeTransform(FTransform::Identity);
-
-	//CreateBattleArea();
-
-	//GetRootComponent()->SetRelativeTransform(Transform);
-
-	StaticMeshComponent->OnComponentBeginOverlap.AddDynamic(this, &AGameSystem_BattleArea::BeginOverlap);
 
 	GetSpawnPoints();
 }
@@ -247,18 +238,14 @@ void AGameSystem_BattleArea::AreaDebugDraw(SFrustumVertices FrustumVertices)
 
 void AGameSystem_BattleArea::BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	ACharacter* Character = Cast<ACharacter>(OtherActor);
-	if (Character)	{
-		if (Character->ActorHasTag(EnterActorTag))		{
-			StaticMeshComponent->DestroyComponent();	// コンポーネントを破壊
+	if (!OtherActor || !OtherActor->ActorHasTag(EnterActorTag)) { return; }
 
-			BPFunction();
+	StaticMeshComponent->DestroyComponent();	// コンポーネントを破壊
 
-			EnterBattleArea(isEvent);
+	BPFunction();
 
-			//NowBattleArea = true;
-		}
-	}
+	EnterBattleArea(isEvent);
+
 }
 
 int32 AGameSystem_BattleArea::CheckEnemyCount()
@@ -293,7 +280,6 @@ void AGameSystem_BattleArea::EnterBattleArea(bool _isEvent)
 	if (GameMode) {
 		bIsInBattleArea = true;
 		if (SpawnPoints.Num() == 0) {
-			UE_LOG(LogTemp, Warning, TEXT("SpawnPoints is empty"));
 			return;
 		}
 
@@ -333,7 +319,6 @@ void AGameSystem_BattleArea::GetSpawnPoints()
 
 void AGameSystem_BattleArea::IgnoreCollision()
 {
-	UE_LOG(LogTemp, Warning, TEXT("IgnoreCollision called"));
 	StaticMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	LeftMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	RightMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -344,16 +329,11 @@ void AGameSystem_BattleArea::IgnoreCollision()
 
 void AGameSystem_BattleArea::ResetCollision()
 {
-	UE_LOG(LogTemp, Warning, TEXT("ResetCollision called"));
 	StaticMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	LeftMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	RightMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	NearMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 }
-
-//void AGameSystem_BattleArea::BPFunction()
-//{
-//}
 
 void AGameSystem_BattleArea::BPFunction_Implementation()
 {

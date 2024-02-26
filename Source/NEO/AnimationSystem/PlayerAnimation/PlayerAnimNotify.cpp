@@ -44,7 +44,7 @@ void UPlayerAnimNotify::NotifyAction(AActor* _Owner, UAnimSequenceBase* Animatio
         switch (NotifyType)
         {
         case EPlayerNotifyType::NotifyType_SetCollision:    // 当たり判定開始の処理が来た時
-            pPlayer->SetCollision();
+            pPlayer->Attack();
             break;
         case EPlayerNotifyType::NotifyType_SaveCombo:       // コンボ継続の通知が来た時
             pPlayer->ContinuationCombo();
@@ -61,7 +61,6 @@ void UPlayerAnimNotify::NotifyAction(AActor* _Owner, UAnimSequenceBase* Animatio
         case EPlayerNotifyType::NotifyType_StopMontage:     // アニメーション再生を止める処理
             pPlayer->StopMontage();
             break;
-
         }
     }
 }

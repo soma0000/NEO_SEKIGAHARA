@@ -32,6 +32,4 @@ public:
 	//この敵がバトルエリアの敵かどうかを取得するための関数
 	UFUNCTION()
 	const bool GetIsAreaEnemy();
-		
-
 };

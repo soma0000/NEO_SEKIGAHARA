@@ -2,12 +2,13 @@
 
 
 #include "EnemyBase.h"
+#include "NEO/WeaponSystem/WeaponComponent.h"
 
 
-AEnemyBase::AEnemyBase() :
-	IsAreaEnemy(true)
+
+AEnemyBase::AEnemyBase()
+	: IsAreaEnemy(true)
 {
-
 }
 
 //この敵がバトルエリアの敵かどうかを設定するための関数

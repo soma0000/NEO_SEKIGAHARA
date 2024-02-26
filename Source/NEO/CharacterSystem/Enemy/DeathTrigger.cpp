@@ -7,7 +7,7 @@
 ADeathTrigger::ADeathTrigger()
 {
     // Set this actor to call Tick() every frame
-    PrimaryActorTick.bCanEverTick = true;
+    PrimaryActorTick.bCanEverTick = false;
 
     // Create and position a sphere component
     TriggerSphere = CreateDefaultSubobject<USphereComponent>(TEXT("RootComponent"));

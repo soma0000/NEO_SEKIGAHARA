@@ -26,6 +26,15 @@ void ANEOPlayerController::BeginPlay()
 
 	// プレイヤー取得
 	pPlayer = Cast<APlayerBase>(UGameplayStatics::GetPlayerCharacter(this, 0));
+
+	//ConsoleCommand("r.SetRes 45×25w");		// Steam Dech用
+	//ConsoleCommand("r.SetRes 45×25f");
+
+	//ConsoleCommand("r.SetRes 3840×2160w");	// 4K対応用
+	//ConsoleCommand("r.SetRes 3840×2160f");
+
+	ConsoleCommand("r.SetRes 1920×1080w");		// 通常
+	ConsoleCommand("r.SetRes 1920×1080f");
 }
 
 
@@ -108,7 +117,7 @@ void ANEOPlayerController::RespawnPlayer()
 FVector ANEOPlayerController::GetPlayerLocation()const
 {
 	// プレイヤーの情報が取れていないとき
-	if (!pPlayer){ FVector::ZeroVector; }
+	if (!pPlayer){ return FVector::ZeroVector; }
 
 	// プレイヤーの座標を返す
 	return pPlayer->GetActorLocation();

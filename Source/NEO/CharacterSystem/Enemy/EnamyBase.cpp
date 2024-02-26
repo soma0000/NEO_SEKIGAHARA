@@ -13,7 +13,7 @@
 #include "NEO/GameSystem/NEOGameMode.h"
 #include "NEO/GameSystem/GameSystem_BattleArea.h"
 #include "NEO/CharacterSystem/ActionAssistComponent.h"
-#include "NEO/CharacterSystem/PlayerSystem/PlayerBase.h"
+#include "NEO/WeaponSystem/WeaponComponent.h"
 
 
 // Sets default values
@@ -37,6 +37,8 @@ AEnamyBase::AEnamyBase()
 
 	MoveSpline = CreateDefaultSubobject<USplineComponent>(TEXT("MoveSpline"));
 	MoveSpline->SetupAttachment(RootComponent);
+	WeaponComp = CreateDefaultSubobject<UWeaponComponent>(TEXT("Weapon"));
+
 	/*MovementSpline = CreateDefaultSubobject<USplineComponent>(TEXT("MovementSpline1"));
 	MovementSpline->SetupAttachment(RootComponent);*/
 }
@@ -270,8 +272,10 @@ void AEnamyBase::TakedDamage(float DamageAmount, bool _bLastAttack)
 }
 
 
-void AEnamyBase::Attack_Sword(TTuple<TArray<AActor*>, TArray<FVector>> HitActorAndLocation)
+void AEnamyBase::Attack()
 {
+	TTuple<TArray<AActor*>, TArray<FVector>> HitActorAndLocation = WeaponComp->SetCollision();
+
 	//今当たっているアクターが取れる(AActor*)
 	TArray<AActor*> DamageInfo = HitActorAndLocation.Get<0>();
 
@@ -291,29 +295,6 @@ void AEnamyBase::Attack_Sword(TTuple<TArray<AActor*>, TArray<FVector>> HitActorA
 		}
 	}
 }
-
-void AEnamyBase::Attack_Lance(TTuple<TArray<AActor*>, TArray<FVector>> HitActorAndLocation)
-{
-	//今当たっているアクターが取れる(AActor*)
-	TArray<AActor*> DamageInfo = HitActorAndLocation.Get<0>();
-
-	//当たった場所をとれる
-	TArray<FVector> EffectPoint = HitActorAndLocation.Get<1>();
-
-	for (AActor* ActorArray : DamageInfo)
-	{
-		if (ActorArray != nullptr)
-		{
-			if (ActorArray->ActorHasTag("Player"))
-			{
-				//プレイヤーにダメージを与える(引数１：ダメージ値、引数2：最後の攻撃かどうか(ノックバックさせるため))
-				Cast<ACharacterBase>(ActorArray)->TakedDamage(10.f, false);
-				break;
-			}
-		}
-	}
-}
-
 
 
 /*

@@ -9,7 +9,7 @@
 ABullet::ABullet()
 {
     // Set this actor to call Tick() every frame
-    PrimaryActorTick.bCanEverTick = true;
+    PrimaryActorTick.bCanEverTick = false;
     // Create a sphere component and attach it to the root component
     SphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComponent"));
     RootComponent = SphereComponent;

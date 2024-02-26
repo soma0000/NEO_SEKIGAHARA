@@ -2,7 +2,7 @@
 
 
 #include "Rolling.h"
-#include "NEO/CharacterSystem/PlayerSystem/PlayerBase.h"
+#include "NEO/CharacterSystem/CharacterBase.h"
 #include "Kismet/GameplayStatics.h"
 // Sets default values
 ARolling::ARolling()
@@ -19,16 +19,20 @@ ARolling::ARolling()
 
 void ARolling::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	
-		APlayerBase* CastedPlayer = Cast<APlayerBase>(OtherActor);
-		if (CastedPlayer)
-		{
-			// Apply damage to the player
-			CastedPlayer->TakedDamage(Damage);
-			Destroy();
-		}
-	
+	if (!OtherActor || OtherActor->Tags.Num() <= 0 || OtherActor->ActorHasTag("Pusher")) { return; }
 
+	if (OtherActor->ActorHasTag("Player"))
+	{
+		ACharacterBase* CastedPlayer = Cast<ACharacterBase>(OtherActor);
+		CastedPlayer->TakedDamage(Damage);
+		Destroy();
+	}
+	else if(OtherActor->ActorHasTag("Enemy"))
+	{
+		ACharacterBase* CastedEnemy = Cast<ACharacterBase>(OtherActor);
+		CastedEnemy->TakedDamage(Damage);
+		Destroy();
+	}
 }
 
 // Called when the game starts or when spawned

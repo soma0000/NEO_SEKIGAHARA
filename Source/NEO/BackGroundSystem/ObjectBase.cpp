@@ -9,7 +9,7 @@
 AObjectBase::AObjectBase()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	RootComponent = Mesh;
 
@@ -24,6 +24,7 @@ void AObjectBase::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	PlayerCharacter = Cast<ACharacter>(GetPlayer());
 }
 
 AActor* AObjectBase::GetPlayer()
@@ -36,7 +37,6 @@ AActor* AObjectBase::GetPlayer()
 void AObjectBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	PlayerCharacter = Cast<ACharacter>(GetPlayer());
 	/*
 	float DistanceTolayer = FVector::Dist(PlayerCharacter->GetActorLocation(), GetActorLocation());
 	int32 LodLevel;
@@ -55,7 +55,7 @@ void AObjectBase::Tick(float DeltaTime)
 	Mesh->SetForcedLodModel(LodLevel);
 
 	*/
-	CheckAndDestroy();
+	//CheckAndDestroy();
 }
 void AObjectBase::ReceiveDamage(float DamageAmount)
 {
@@ -87,7 +87,5 @@ void AObjectBase::CheckAndDestroy()
 		 Destroy();
 	}
 }
-
-
 
 

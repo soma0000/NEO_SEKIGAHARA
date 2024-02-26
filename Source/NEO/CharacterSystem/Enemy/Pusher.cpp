@@ -14,6 +14,7 @@ APusher::APusher()
 	MaxHealth = 10;
 	Health = MaxHealth;
 	DeathCheck = false;
+
 }
 
 // Called when the game starts or when spawned
@@ -41,7 +42,7 @@ void APusher::DoPush()
 	if (Health > 0) 
 	{
 
-PlayAnimMontage(Push, 1.5, NAME_None);
+		PlayAnimMontage(Push, 1.5, NAME_None);
 	}
 	
 }
