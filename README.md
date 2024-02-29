@@ -19,8 +19,8 @@ C++
 
 \NEO_SEKIGAHARA\Source\NEO\CharacterSystem
 
-☆ActionAssistComponent.cpp
-☆ActionAssistComponent.h
+ActionAssistComponent.cpp
+ActionAssistComponent.h
 ☆CharacterBase.cpp
 ☆CharacterBase.h
 
@@ -35,12 +35,14 @@ PlayerCharacter.h
 
 \NEO_SEKIGAHARA\Source\NEO\AnimationSystem
 
-☆CharacterAnimInstance.cpp
-☆CharacterAnimInstance.h
+CharacterAnimInstance.cpp
+CharacterAnimInstance.h
 CharacterAnimNotify.cpp
 CharacterAnimNotify.h
 CharacterAnimNotifyState.cpp
 CharacterAnimNotifyState.h
+RootMotionNotifyState.cpp
+RootMotionNotifyState.h
 
 \NEO_SEKIGAHARA\Source\NEO\AnimationSystem\PlayerAnimation
 
